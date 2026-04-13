@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import type { MatchingExercise } from "@/types";
@@ -14,97 +14,73 @@ interface Props {
 export function MatchingRenderer({ exercise, onAnswer, answered }: Props) {
   const [selectedLeft, setSelectedLeft] = useState<string | null>(null);
   const [matches, setMatches] = useState<Record<string, string>>({});
+  const shuffledRight = useMemo(() => [...exercise.pairs].sort(() => Math.random() - 0.5).map((p) => p.right), []);
 
-  const shuffledRight = [...exercise.pairs]
-    .sort(() => Math.random() - 0.5)
-    .map((p) => p.right);
-
-  const handleLeftClick = (id: string) => {
+  const handleLeft = (id: string) => {
     if (answered) return;
     setSelectedLeft(id === selectedLeft ? null : id);
   };
 
-  const handleRightClick = (right: string) => {
+  const handleRight = (right: string) => {
     if (answered || !selectedLeft) return;
-
-    const newMatches = { ...matches, [selectedLeft]: right };
-    setMatches(newMatches);
+    const next = { ...matches, [selectedLeft]: right };
+    setMatches(next);
     setSelectedLeft(null);
-
-    if (Object.keys(newMatches).length === exercise.pairs.length) {
-      let correct = 0;
-      exercise.pairs.forEach((pair) => {
-        if (newMatches[pair.id] === pair.right) correct++;
-      });
+    if (Object.keys(next).length === exercise.pairs.length) {
+      const correct = exercise.pairs.filter((p) => next[p.id] === p.right).length;
       const score = Math.round((correct / exercise.pairs.length) * 100);
       onAnswer(score, score >= 80 ? 5 : score >= 60 ? 4 : 2);
     }
   };
 
-  const getMatchStatus = (id: string) => {
+  const status = (id: string) => {
     if (!answered || !matches[id]) return null;
-    const pair = exercise.pairs.find((p) => p.id === id);
-    return matches[id] === pair?.right ? "correct" : "wrong";
+    return matches[id] === exercise.pairs.find((p) => p.id === id)?.right ? "correct" : "wrong";
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="grid grid-cols-2 gap-3">
-        {/* Colonne gauche */}
         <div className="space-y-2">
-          <p className="text-xs text-zinc-500 text-center mb-2">À associer</p>
+          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider text-center">À associer</p>
           {exercise.pairs.map((pair, i) => {
-            const status = getMatchStatus(pair.id);
+            const s = status(pair.id);
             return (
-              <motion.button
-                key={pair.id}
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.06 }}
-                onClick={() => handleLeftClick(pair.id)}
-                disabled={answered || !!matches[pair.id]}
+              <motion.button key={pair.id} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}
+                onClick={() => handleLeft(pair.id)} disabled={answered || !!matches[pair.id]}
                 className={cn(
-                  "w-full p-3 rounded-xl border text-sm text-left transition-all",
-                  selectedLeft === pair.id && "border-blue-500 bg-blue-500/15 text-blue-200",
-                  matches[pair.id] && !answered && "border-zinc-700 bg-zinc-800 text-zinc-500",
-                  status === "correct" && "border-green-500 bg-green-500/10 text-green-200",
-                  status === "wrong" && "border-red-500 bg-red-500/10 text-red-200",
-                  !selectedLeft && !matches[pair.id] && !answered && "border-zinc-800 bg-zinc-900/40 text-zinc-200 hover:border-zinc-600",
-                )}
-              >
+                  "w-full p-3 rounded-md border text-sm text-left transition-all",
+                  selectedLeft === pair.id && "border-blue-400 bg-blue-50 text-blue-800",
+                  matches[pair.id] && !answered && "border-gray-200 bg-gray-50 text-gray-400",
+                  s === "correct" && "border-emerald-300 bg-emerald-50 text-emerald-800",
+                  s === "wrong" && "border-red-300 bg-red-50 text-red-700",
+                  !selectedLeft && !matches[pair.id] && !answered && "border-gray-200 bg-white text-gray-700 hover:border-gray-300",
+                )}>
                 {pair.left}
               </motion.button>
             );
           })}
         </div>
 
-        {/* Colonne droite */}
         <div className="space-y-2">
-          <p className="text-xs text-zinc-500 text-center mb-2">
-            {selectedLeft ? "Clique pour associer" : "Sélectionne d'abord à gauche"}
+          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider text-center">
+            {selectedLeft ? "Clique pour associer" : "Sélectionne à gauche"}
           </p>
           {shuffledRight.map((right, i) => {
             const isMatched = Object.values(matches).includes(right);
-            const matchedPairId = Object.entries(matches).find(([, v]) => v === right)?.[0];
-            const isCorrectMatch = answered && matchedPairId && exercise.pairs.find(p => p.id === matchedPairId)?.right === right;
-
+            const matchedId = Object.entries(matches).find(([, v]) => v === right)?.[0];
+            const isCorrectMatch = answered && matchedId && exercise.pairs.find((p) => p.id === matchedId)?.right === right;
             return (
-              <motion.button
-                key={right}
-                initial={{ opacity: 0, x: 8 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.06 }}
-                onClick={() => handleRightClick(right)}
-                disabled={answered || isMatched}
+              <motion.button key={right} initial={{ opacity: 0, x: 6 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}
+                onClick={() => handleRight(right)} disabled={answered || isMatched}
                 className={cn(
-                  "w-full p-3 rounded-xl border text-sm text-left transition-all",
-                  !isMatched && selectedLeft && !answered && "border-amber-500/50 bg-amber-500/5 text-amber-200 hover:border-amber-500 cursor-pointer",
-                  !isMatched && !selectedLeft && !answered && "border-zinc-800 bg-zinc-900/40 text-zinc-400",
-                  isMatched && !answered && "border-zinc-700 bg-zinc-800/50 text-zinc-500",
-                  isCorrectMatch && "border-green-500 bg-green-500/10 text-green-200",
-                  isMatched && answered && !isCorrectMatch && "border-red-500/50 bg-red-500/5 text-red-300",
-                )}
-              >
+                  "w-full p-3 rounded-md border text-sm text-left transition-all",
+                  !isMatched && selectedLeft && !answered && "border-amber-300 bg-amber-50 text-amber-800 hover:border-amber-400 cursor-pointer",
+                  !isMatched && !selectedLeft && !answered && "border-gray-200 bg-white text-gray-500",
+                  isMatched && !answered && "border-gray-100 bg-gray-50 text-gray-400",
+                  isCorrectMatch && "border-emerald-300 bg-emerald-50 text-emerald-800",
+                  isMatched && answered && !isCorrectMatch && "border-red-200 bg-red-50 text-red-600",
+                )}>
                 {right}
               </motion.button>
             );
@@ -112,15 +88,10 @@ export function MatchingRenderer({ exercise, onAnswer, answered }: Props) {
         </div>
       </div>
 
-      {/* Score partiel */}
       {answered && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center text-sm text-zinc-400"
-        >
-          {exercise.pairs.filter(p => matches[p.id] === p.right).length} / {exercise.pairs.length} bonnes associations
-        </motion.div>
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center text-xs text-gray-500">
+          {exercise.pairs.filter((p) => matches[p.id] === p.right).length} / {exercise.pairs.length} bonnes associations
+        </motion.p>
       )}
     </div>
   );

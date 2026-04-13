@@ -8,17 +8,23 @@ export async function POST(req: NextRequest) {
     const { exerciseContent, userResponse, level } = body as {
       exerciseContent: WritingExercise;
       userResponse: string;
-      level: CEFRLevel;
+      level?: CEFRLevel;
     };
 
-    if (!exerciseContent || !userResponse || !level) {
+    if (!exerciseContent || !userResponse) {
       return NextResponse.json({ error: "Paramètres manquants" }, { status: 400 });
     }
+
+    // level peut venir du body ou du contenu de l'exercice
+    const resolvedLevel: CEFRLevel =
+      level ??
+      (exerciseContent as { level?: CEFRLevel }).level ??
+      "B1";
 
     const evaluation = await evaluateWritingResponse(
       exerciseContent,
       userResponse,
-      level
+      resolvedLevel
     );
 
     return NextResponse.json(evaluation);

@@ -4,7 +4,7 @@ export const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-export const AI_MODEL = "claude-sonnet-4-6";
+export const AI_MODEL = "claude-sonnet-4-6"; // modèle interne
 
 // Prompt système de base pour DeutschFlow
 export const SYSTEM_PROMPT_BASE = `Tu es DeutschFlow AI, un assistant pédagogique expert en enseignement de l'allemand pour francophones.

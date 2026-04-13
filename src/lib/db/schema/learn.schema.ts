@@ -129,6 +129,21 @@ export const spacedRepetition = pgTable("spaced_repetition", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// ─── Active Learn Session (session en cours, persistée) ──────────────────────
+export const activeLearnSession = pgTable("active_learn_session", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .unique() // une seule session active par utilisateur
+    .references(() => user.id, { onDelete: "cascade" }),
+  exerciseIds: jsonb("exercise_ids").notNull(), // string[]
+  exercisesData: jsonb("exercises_data").notNull(), // SessionExercise[]
+  currentIndex: integer("current_index").notNull().default(0),
+  results: jsonb("results").notNull().default([]), // résultats partiels
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // ─── Daily Sessions ───────────────────────────────────────────────────────────
 export const dailySession = pgTable("daily_session", {
   id: text("id").primaryKey(),
@@ -140,4 +155,18 @@ export const dailySession = pgTable("daily_session", {
   exercisesCompleted: integer("exercises_completed").notNull().default(0),
   timeSpentSeconds: integer("time_spent_seconds").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// ─── Skill Performance (profil adaptatif par compétence) ─────────────────────
+export const skillPerformance = pgTable("skill_performance", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  skill: skillEnum("skill").notNull(),
+  avgScore: real("avg_score").notNull().default(50),
+  totalAttempts: integer("total_attempts").notNull().default(0),
+  failedAttempts: integer("failed_attempts").notNull().default(0),
+  weakExerciseTypes: jsonb("weak_exercise_types").notNull().default({}),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

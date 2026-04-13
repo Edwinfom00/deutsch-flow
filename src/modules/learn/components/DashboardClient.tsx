@@ -20,10 +20,10 @@ const XP_PER_LEVEL: Record<CEFRLevel, number> = {
 };
 
 const quickActions = [
-  { label: "Commencer une leçon", sub: "Lesen · A2", href: "/dashboard/learn", icon: BookOpen, color: "text-blue-500", bg: "bg-blue-50" },
-  { label: "Zone de Parole", sub: "Dialogue IA", href: "/dashboard/speak", icon: Mic, color: "text-emerald-500", bg: "bg-emerald-50" },
-  { label: "Révisions du jour", sub: "Spaced repetition", href: "/dashboard/review", icon: TrendingUp, color: "text-violet-500", bg: "bg-violet-50" },
-  { label: "Mes badges", sub: "Voir la progression", href: "/dashboard/badges", icon: Trophy, color: "text-amber-500", bg: "bg-amber-50" },
+  { label: "Commencer une leçon", sub: "Lesen · A2", href: "/learn", icon: BookOpen, color: "text-blue-500", bg: "bg-blue-50" },
+  { label: "Zone de Parole", sub: "Dialogue IA", href: "/speak", icon: Mic, color: "text-emerald-500", bg: "bg-emerald-50" },
+  { label: "Révisions du jour", sub: "Spaced repetition", href: "/review", icon: TrendingUp, color: "text-violet-500", bg: "bg-violet-50" },
+  { label: "Mes badges", sub: "Voir la progression", href: "/badges", icon: Trophy, color: "text-amber-500", bg: "bg-amber-50" },
 ];
 
 const fadeUp = {
@@ -68,7 +68,7 @@ export function DashboardClient({ data }: { data: DashboardData }) {
           </p>
         </div>
         <Link
-          href="/dashboard/learn"
+          href="/learn"
           className="flex items-center gap-1.5 h-8 px-3 bg-gray-900 hover:bg-gray-800 text-white text-xs font-semibold rounded-md transition-colors"
         >
           Nouvelle leçon

@@ -24,26 +24,26 @@ const nav = [
         title: "Apprendre",
         icon: BookOpen,
         children: [
-          { title: "Leçons", href: "/dashboard/learn" },
-          { title: "Révisions", href: "/dashboard/review" },
-          { title: "Vocabulaire", href: "/dashboard/vocabulary" },
+          { title: "Leçons", href: "/learn" },
+          { title: "Révisions", href: "/review" },
+          { title: "Vocabulaire", href: "/vocabulary" },
         ],
       },
-      { title: "Zone de Parole", href: "/dashboard/speak", icon: Mic },
+      { title: "Zone de Parole", href: "/speak", icon: Mic },
     ],
   },
   {
     label: "Progression",
     items: [
-      { title: "Streak & XP", href: "/dashboard/streak", icon: Flame },
-      { title: "Badges", href: "/dashboard/badges", icon: Trophy },
-      { title: "Classement", href: "/dashboard/league", icon: Zap },
+      { title: "Streak & XP", href: "/streak", icon: Flame },
+      { title: "Badges", href: "/badges", icon: Trophy },
+      { title: "Classement", href: "/league", icon: Zap },
     ],
   },
   {
     label: "Compte",
     items: [
-      { title: "Paramètres", href: "/dashboard/settings", icon: Settings },
+      { title: "Paramètres", href: "/settings", icon: Settings },
     ],
   },
 ];
@@ -60,7 +60,7 @@ export function AppSidebar({ userName, userEmail, level }: Props) {
   };
 
   return (
-    <Sidebar collapsible="icon" className="[--sidebar-width:250px]">
+    <Sidebar collapsible="icon" className="[--sidebar-width:255px]">
 
       {/* Logo */}
       <SidebarHeader className="px-3 pt-4 pb-3 border-b border-sidebar-border">

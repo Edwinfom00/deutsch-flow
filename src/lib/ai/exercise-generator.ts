@@ -350,7 +350,8 @@ export interface GenerateExerciseParams {
   level: CEFRLevel;
   sector: Sector;
   skill: Skill;
-  topic?: string; // Sujet spécifique (optionnel)
+  topic?: string;
+  adaptiveContext?: string;
 }
 
 export interface GeneratedExercise {
@@ -359,13 +360,19 @@ export interface GeneratedExercise {
   xpReward: number;
 }
 
+export interface SkillProfile {
+  skill: string;
+  avgScore: number;
+  weakExerciseTypes: Record<string, number>;
+}
+
 /**
- * Génère un exercice via Claude en s'inspirant des méthodes Goethe/ÖSD
+ * Génère un exercice via notre modèle IA en s'inspirant des méthodes Goethe/ÖSD
  */
 export async function generateExercise(
   params: GenerateExerciseParams
 ): Promise<GeneratedExercise> {
-  const { type, level, sector, skill, topic } = params;
+  const { type, level, sector, skill, topic, adaptiveContext } = params;
 
   const exercisePrompt = EXERCISE_PROMPTS[type];
   if (!exercisePrompt) {
@@ -391,7 +398,7 @@ export async function generateExercise(
   };
 
   const prompt = `${SYSTEM_PROMPT_BASE}
-
+${adaptiveContext ?? ""}
 PARAMÈTRES DE L'EXERCICE:
 - Niveau CEFR: ${level}
 - Secteur: ${sector} (contexte: ${sectorContext[sector] || "général"})
@@ -436,48 +443,49 @@ Réponds UNIQUEMENT avec le JSON valide de l'exercice, sans texte autour.`;
 }
 
 /**
- * Génère une session d'exercices quotidienne équilibrée
- * Inspiré du format des examens Goethe/ÖSD: mélange de compétences
+ * Génère une session d'exercices quotidienne équilibrée et adaptative.
+ * Si un profil de performance est fourni, les lacunes sont priorisées.
  */
 export async function generateDailySession(
   level: CEFRLevel,
   sector: Sector,
-  goalMinutes: number = 15
+  goalMinutes: number = 15,
+  skillProfiles: SkillProfile[] = []
 ): Promise<GeneratedExercise[]> {
-  // Nombre d'exercices selon le temps disponible
   const exerciseCount = goalMinutes <= 5 ? 3 : goalMinutes <= 15 ? 5 : 8;
 
-  // Distribution équilibrée par compétence (inspirée Goethe)
-  const sessionPlan: Array<{ type: string; skill: Skill }> = [];
-
-  if (level === "A0" || level === "A1") {
-    sessionPlan.push(
+  // Plan de base par niveau
+  const basePlan: Record<string, Array<{ type: string; skill: Skill }>> = {
+    A0: [
       { type: "VOCAB_FLASHCARD", skill: "WORTSCHATZ" },
       { type: "VOCAB_LUECKENTEXT", skill: "WORTSCHATZ" },
       { type: "GRAMMATIK_ORDNEN", skill: "GRAMMATIK" },
       { type: "SPRECHEN_VORSTELLEN", skill: "SPRECHEN" },
       { type: "LESEN_RICHTIG_FALSCH", skill: "LESEN" },
-    );
-  } else if (level === "A2") {
-    sessionPlan.push(
+    ],
+    A1: [
+      { type: "VOCAB_FLASHCARD", skill: "WORTSCHATZ" },
+      { type: "VOCAB_LUECKENTEXT", skill: "WORTSCHATZ" },
+      { type: "GRAMMATIK_ORDNEN", skill: "GRAMMATIK" },
+      { type: "SPRECHEN_VORSTELLEN", skill: "SPRECHEN" },
+      { type: "LESEN_RICHTIG_FALSCH", skill: "LESEN" },
+    ],
+    A2: [
       { type: "VOCAB_ZUORDNUNG", skill: "WORTSCHATZ" },
       { type: "LESEN_MULTIPLE_CHOICE", skill: "LESEN" },
       { type: "SCHREIBEN_EMAIL", skill: "SCHREIBEN" },
       { type: "GRAMMATIK_LUECKENTEXT", skill: "GRAMMATIK" },
       { type: "SPRECHEN_DIALOG", skill: "SPRECHEN" },
-    );
-  } else if (level === "B1") {
-    sessionPlan.push(
+    ],
+    B1: [
       { type: "LESEN_RICHTIG_FALSCH", skill: "LESEN" },
       { type: "SCHREIBEN_EMAIL", skill: "SCHREIBEN" },
       { type: "HOEREN_MULTIPLE_CHOICE", skill: "HOEREN" },
       { type: "GRAMMATIK_TRANSFORMATION", skill: "GRAMMATIK" },
       { type: "SPRECHEN_ROLEPLAY", skill: "SPRECHEN" },
       { type: "SCHREIBEN_MEINUNG", skill: "SCHREIBEN" },
-    );
-  } else {
-    // B2+
-    sessionPlan.push(
+    ],
+    B2: [
       { type: "LESEN_LUECKENTEXT", skill: "LESEN" },
       { type: "SCHREIBEN_MEINUNG", skill: "SCHREIBEN" },
       { type: "HOEREN_RICHTIG_FALSCH", skill: "HOEREN" },
@@ -486,18 +494,99 @@ export async function generateDailySession(
       { type: "LESEN_ZUORDNUNG", skill: "LESEN" },
       { type: "SCHREIBEN_BESCHREIBUNG", skill: "SCHREIBEN" },
       { type: "GRAMMATIK_TRANSFORMATION", skill: "GRAMMATIK" },
-    );
+    ],
+  };
+
+  const plan = basePlan[level] ?? basePlan["B2"];
+
+  // ── Adaptation basée sur les lacunes ──────────────────────────────────────
+  let adaptedPlan = [...plan];
+
+  if (skillProfiles.length > 0) {
+    // Identifier les compétences faibles (score < 60)
+    const weakSkills = skillProfiles
+      .filter((p) => p.avgScore < 60)
+      .sort((a, b) => a.avgScore - b.avgScore); // les plus faibles en premier
+
+    // Identifier les types d'exercices les plus ratés
+    const weakTypes = new Map<string, number>();
+    for (const profile of skillProfiles) {
+      for (const [type, count] of Object.entries(profile.weakExerciseTypes)) {
+        weakTypes.set(type, (weakTypes.get(type) ?? 0) + (count as number));
+      }
+    }
+
+    // Remplacer jusqu'à 40% des exercices par des exercices ciblant les lacunes
+    const slotsToReplace = Math.floor(exerciseCount * 0.4);
+    let replaced = 0;
+
+    for (const weakSkill of weakSkills) {
+      if (replaced >= slotsToReplace) break;
+
+      // Trouver le type d'exercice le plus raté pour cette compétence
+      const weakTypeForSkill = [...weakTypes.entries()]
+        .filter(([type]) => {
+          const skillMap: Record<string, string> = {
+            LESEN: "LESEN", SCHREIBEN: "SCHREIBEN", HOEREN: "HOEREN",
+            SPRECHEN: "SPRECHEN", WORTSCHATZ: "VOCAB", GRAMMATIK: "GRAMMATIK",
+          };
+          return type.startsWith(skillMap[weakSkill.skill] ?? "");
+        })
+        .sort((a, b) => b[1] - a[1])[0];
+
+      const targetType = weakTypeForSkill?.[0] ??
+        plan.find((p) => p.skill === weakSkill.skill)?.type;
+
+      if (targetType && EXERCISE_PROMPTS[targetType]) {
+        // Insérer en début de plan pour que ce soit fait en premier
+        adaptedPlan.unshift({ type: targetType, skill: weakSkill.skill as Skill });
+        replaced++;
+      }
+    }
+
+    // Dédupliquer en gardant l'ordre (les lacunes en premier)
+    const seen = new Set<string>();
+    adaptedPlan = adaptedPlan.filter((item) => {
+      const key = item.type;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   }
 
-  // Générer les exercices en parallèle (limité à exerciseCount)
-  const selected = sessionPlan.slice(0, exerciseCount);
+  const selected = adaptedPlan.slice(0, exerciseCount);
+
+  // Construire le contexte adaptatif pour le prompt
+  const adaptiveContext = skillProfiles.length > 0
+    ? buildAdaptiveContext(skillProfiles)
+    : "";
+
   const exercises = await Promise.all(
     selected.map(({ type, skill }) =>
-      generateExercise({ type, level, sector, skill })
+      generateExercise({ type, level, sector, skill, adaptiveContext })
     )
   );
 
   return exercises;
+}
+
+/**
+ * Construit un contexte textuel des lacunes pour enrichir le prompt de génération
+ */
+function buildAdaptiveContext(profiles: SkillProfile[]): string {
+  const weak = profiles.filter((p) => p.avgScore < 65);
+  if (weak.length === 0) return "";
+
+  const lines = weak.map((p) => {
+    const types = Object.entries(p.weakExerciseTypes)
+      .sort((a, b) => (b[1] as number) - (a[1] as number))
+      .slice(0, 2)
+      .map(([t]) => t)
+      .join(", ");
+    return `- ${p.skill}: score moyen ${Math.round(p.avgScore)}%${types ? ` (types difficiles: ${types})` : ""}`;
+  });
+
+  return `\nPROFIL DE L'APPRENANT (lacunes identifiées):\n${lines.join("\n")}\n→ Génère un exercice qui cible spécifiquement ces difficultés, avec des explications adaptées.`;
 }
 
 /**
@@ -528,12 +617,13 @@ Critères d'évaluation (${exercise.rubric?.join(", ") || "général"}):
 
 Réponds en JSON avec exactement ce format:
 {
-  "score": 75, // 0-100
+  "score": 75,
   "feedback": "retour général positif et constructif en français",
   "corrections": [
     { "original": "mot/phrase erroné", "correction": "forme correcte", "explanation": "explication en français" }
   ],
-  "encouragement": "message d'encouragement chaleureux en français (1 phrase)"
+  "encouragement": "message d'encouragement chaleureux en français (1 phrase)",
+  "modelAnswer": "exemple complet de bonne réponse en allemand (même consigne, même longueur)"
 }
 
 IMPORTANT: Commence TOUJOURS par un point positif dans le feedback. Soit bienveillant.`;

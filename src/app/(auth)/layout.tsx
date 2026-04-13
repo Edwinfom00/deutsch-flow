@@ -98,7 +98,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
         {/* Bottom bar */}
         <div className="relative z-10 px-12 xl:px-16 py-6 border-t border-white/6">
           <p className="text-white/25 text-xs">
-            Propulsé par Claude AI · Inspiré par Goethe-Institut & ÖSD
+            Propulsé par l&apos;IA DeutschFlow · Inspiré par Goethe-Institut & ÖSD
           </p>
         </div>
       </div>
