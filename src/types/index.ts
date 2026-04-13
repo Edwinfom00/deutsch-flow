@@ -143,13 +143,14 @@ export interface MatchingExercise extends BaseExercise {
 export interface FlashcardExercise extends BaseExercise {
   type: "VOCAB_FLASHCARD";
   word: string;
-  article?: "der" | "die" | "das"; // Genre pour les noms
+  article?: "der" | "die" | "das";
   translation: string;
   exampleSentence: string;
   exampleTranslation: string;
+  synonyms?: string[];
   imageUrl?: string;
   audioUrl?: string;
-  tags: string[]; // Secteur, thème, etc.
+  tags: string[];
 }
 
 // Écriture

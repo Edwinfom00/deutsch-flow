@@ -14,6 +14,45 @@ import { getLearnHistory } from "../server/history.actions";
 import { LEVEL_LABELS, SECTOR_LABELS, SECTOR_ICONS, SKILL_LABELS } from "@/types";
 import type { CEFRLevel, Sector, Skill } from "@/types";
 
+function LearnSkeleton() {
+  return (
+    <div className="p-5 max-w-4xl mx-auto space-y-6 animate-pulse">
+      <div className="space-y-1">
+        <div className="h-4 w-16 bg-gray-200 rounded-sm" />
+        <div className="h-3 w-48 bg-gray-100 rounded-sm" />
+      </div>
+      <div className="bg-gray-900 rounded-md overflow-hidden">
+        <div className="p-6 space-y-3">
+          <div className="h-5 w-40 bg-white/10 rounded-md" />
+          <div className="h-7 w-48 bg-white/10 rounded-sm" />
+          <div className="h-3 w-32 bg-white/5 rounded-sm" />
+        </div>
+        <div className="grid grid-cols-3 border-t border-white/6">
+          {[0,1,2].map(i => (
+            <div key={i} className={`flex flex-col items-center gap-2 py-4 ${i < 2 ? "border-r border-white/6" : ""}`}>
+              <div className="h-4 w-4 bg-white/10 rounded-sm" />
+              <div className="h-5 w-8 bg-white/10 rounded-sm" />
+              <div className="h-2 w-12 bg-white/5 rounded-sm" />
+            </div>
+          ))}
+        </div>
+        <div className="p-4 border-t border-white/6">
+          <div className="h-11 bg-white/10 rounded-md" />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        {[0,1].map(i => (
+          <div key={i} className="bg-white border border-gray-100 rounded-md p-4 space-y-3">
+            <div className="h-8 w-8 bg-gray-100 rounded-md" />
+            <div className="h-3.5 w-24 bg-gray-200 rounded-sm" />
+            <div className="h-2.5 w-32 bg-gray-100 rounded-sm" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 interface Props { level: string; sector: string; goalMinutes: number }
 
 const exerciseCount = (m: number) => m <= 5 ? 3 : m <= 15 ? 5 : 8;
@@ -110,14 +149,14 @@ export function LearnPage({ level, sector, goalMinutes }: Props) {
     });
   };
 
-  if (isHydrating) return null;
+  if (isHydrating) return <LearnSkeleton />;
   if (isGenerating) return <GeneratingScreen level={level} count={exerciseCount(goalMinutes)} />;
   if (status === "playing" || status === "completed") return <LearnSession />;
 
   const count = exerciseCount(goalMinutes);
 
   return (
-    <div className="p-5 max-w-4xl mx-auto space-y-6">
+    <div className="p-5 max-w-5xl mx-auto space-y-6">
 
       <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
         <h1 className="text-[15px] font-semibold text-gray-900">Leçons</h1>

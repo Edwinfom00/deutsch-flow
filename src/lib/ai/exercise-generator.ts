@@ -238,6 +238,7 @@ Format JSON exact:
   "translation": "traduction française",
   "exampleSentence": "phrase exemple en allemand",
   "exampleTranslation": "traduction de l'exemple",
+  "synonyms": ["synonyme1", "synonyme2"], // 2-3 synonymes allemands si existants, sinon []
   "tags": ["secteur", "thème", "A1"] // niveau et domaine
 }`,
 

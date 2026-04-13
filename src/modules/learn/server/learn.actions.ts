@@ -245,6 +245,50 @@ export async function completeLearnSession(params: {
     }
   }
 
+  // ── Spaced Repetition — upsert SM-2 pour chaque exercice ────────────────
+  if (exerciseIds.length > 0) {
+    const { spacedRepetition } = await import("@/lib/db/schema");
+    const now = new Date();
+
+    for (const result of exerciseResults) {
+      const quality = result.quality ?? (result.score >= 80 ? 5 : result.score >= 60 ? 4 : result.score >= 40 ? 3 : 1);
+
+      const [existing] = await db.select().from(spacedRepetition)
+        .where(and(eq(spacedRepetition.userId, uid), eq(spacedRepetition.exerciseId, result.exerciseId)));
+
+      let ef = existing?.easeFactor ?? 2.5;
+      let interval = existing?.interval ?? 1;
+      let reps = existing?.repetitions ?? 0;
+
+      if (quality >= 3) {
+        if (reps === 0) interval = 1;
+        else if (reps === 1) interval = 6;
+        else interval = Math.round(interval * ef);
+        reps += 1;
+      } else {
+        reps = 0;
+        interval = 1;
+      }
+      ef = Math.max(1.3, ef + 0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
+
+      const nextReviewAt = new Date();
+      nextReviewAt.setDate(nextReviewAt.getDate() + interval);
+
+      if (existing) {
+        await db.update(spacedRepetition).set({
+          easeFactor: ef, interval, repetitions: reps,
+          nextReviewAt, lastReviewAt: now, lastQuality: quality, updatedAt: now,
+        }).where(eq(spacedRepetition.id, existing.id));
+      } else {
+        await db.insert(spacedRepetition).values({
+          id: nanoid(), userId: uid, exerciseId: result.exerciseId,
+          easeFactor: ef, interval, repetitions: reps,
+          nextReviewAt, lastReviewAt: now, lastQuality: quality,
+        });
+      }
+    }
+  }
+
   // ── Streak ────────────────────────────────────────────────────────────────
   const [todayStreak] = await db
     .select()
