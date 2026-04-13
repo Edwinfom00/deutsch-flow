@@ -496,7 +496,7 @@ export default function LandingPage() {
             <span className="text-gray-400 text-sm font-medium">DeutschFlow © 2025</span>
           </div>
           <p className="text-gray-300 text-xs">
-            Inspiré par Goethe-Institut & ÖSD · Propulsé par Claude AI
+            Inspiré par Goethe-Institut & ÖSD · Propulsé par l&apos;IA DeutschFlow
           </p>
         </div>
       </footer>
