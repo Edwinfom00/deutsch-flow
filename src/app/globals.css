@@ -68,20 +68,21 @@
   --secondary-foreground: #065f46;
   --muted: #f3f4f6;
   --muted-foreground: #6b7280;
-  --accent: #fff7ed;
-  --accent-foreground: #c2410c;
+  --accent: #f5f5f5;
+  --accent-foreground: #111111;
   --destructive: #ef4444;
   --border: #e5e7eb;
   --input: #f9fafb;
   --ring: #10b981;
   --radius: 0.75rem;
-  --sidebar: #ffffff;
-  --sidebar-foreground: #1a1a2e;
+  /* Sidebar dark — variables overridées ici, pas dans le composant */
+  --sidebar: #0a0a0f;
+  --sidebar-foreground: rgba(255,255,255,0.75);
   --sidebar-primary: #10b981;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f0fdf4;
-  --sidebar-accent-foreground: #065f46;
-  --sidebar-border: #e5e7eb;
+  --sidebar-accent: rgba(255,255,255,0.07);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgba(255,255,255,0.06);
   --sidebar-ring: #10b981;
 }
 

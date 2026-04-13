@@ -5,9 +5,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import { Loader2, Mail, Lock, Eye, EyeOff, User } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Loader2, Mail, Lock, Eye, EyeOff, User, AlertCircle } from "lucide-react";
 import { signUp } from "@/lib/auth-client";
+import { useAuth } from "@/hooks/use-auth";
 import { createUserProfile } from "@/modules/auth/server/auth.actions";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,8 +32,34 @@ const registerSchema = z
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
+const inputClass = (hasError?: boolean) =>
+  cn(
+    "h-11 bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-300 rounded-lg text-sm",
+    "focus:bg-white focus:border-gray-900 focus:ring-0 transition-colors",
+    hasError && "border-red-300 bg-red-50/30 focus:border-red-400"
+  );
+
+function FieldError({ message }: { message?: string }) {
+  return (
+    <AnimatePresence>
+      {message && (
+        <motion.p
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -4 }}
+          transition={{ duration: 0.2 }}
+          className="text-xs text-red-500 flex items-center gap-1"
+        >
+          <AlertCircle className="h-3 w-3" />{message}
+        </motion.p>
+      )}
+    </AnimatePresence>
+  );
+}
+
 export function RegisterForm() {
   const router = useRouter();
+  const { isAuthenticated } = useAuth({ redirectIfFound: "/dashboard" });
   const [showPwd, setShowPwd] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,95 +86,154 @@ export function RegisterForm() {
     router.push("/onboarding");
   };
 
-  const fieldClass = (hasError?: boolean) =>
-    cn(
-      "h-11 bg-gray-50 border-gray-200 text-gray-900 placeholder:text-gray-400 rounded-xl focus:border-emerald-400 focus:ring-emerald-400/20",
-      hasError && "border-red-300"
-    );
+  if (isAuthenticated) return null;
+
+  const fields = [
+    {
+      id: "name" as const,
+      label: "Prénom",
+      type: "text",
+      placeholder: "Marie",
+      autoComplete: "given-name",
+      icon: User,
+      iconClass: "left-3.5",
+      extraClass: "pl-10",
+    },
+    {
+      id: "email" as const,
+      label: "Adresse email",
+      type: "email",
+      placeholder: "ton@email.com",
+      autoComplete: "email",
+      icon: Mail,
+      iconClass: "left-3.5",
+      extraClass: "pl-10",
+    },
+  ];
 
   return (
     <motion.form
-      initial={{ opacity: 0, y: 12 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35 }}
+      transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
       onSubmit={handleSubmit(onSubmit)}
       className="space-y-4"
     >
-      {/* Name */}
-      <div className="space-y-1.5">
-        <Label htmlFor="name" className="text-sm font-medium text-gray-700">Prénom</Label>
-        <div className="relative">
-          <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input id="name" placeholder="Marie" autoComplete="given-name" {...register("name")}
-            className={cn("pl-10", fieldClass(!!errors.name))} />
-        </div>
-        {errors.name && <p className="text-xs text-red-500">{errors.name.message}</p>}
-      </div>
-
-      {/* Email */}
-      <div className="space-y-1.5">
-        <Label htmlFor="email" className="text-sm font-medium text-gray-700">Adresse email</Label>
-        <div className="relative">
-          <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input id="email" type="email" placeholder="ton@email.com" autoComplete="email" {...register("email")}
-            className={cn("pl-10", fieldClass(!!errors.email))} />
-        </div>
-        {errors.email && <p className="text-xs text-red-500">{errors.email.message}</p>}
-      </div>
+      {/* Name + Email */}
+      {fields.map((f, i) => (
+        <motion.div
+          key={f.id}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: i * 0.06 }}
+          className="space-y-1.5"
+        >
+          <Label htmlFor={f.id} className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            {f.label}
+          </Label>
+          <div className="relative">
+            <f.icon className={`absolute ${f.iconClass} top-1/2 -translate-y-1/2 h-4 w-4 text-gray-300`} />
+            <Input
+              id={f.id}
+              type={f.type}
+              placeholder={f.placeholder}
+              autoComplete={f.autoComplete}
+              {...register(f.id)}
+              className={cn(f.extraClass, inputClass(!!errors[f.id]))}
+            />
+          </div>
+          <FieldError message={errors[f.id]?.message} />
+        </motion.div>
+      ))}
 
       {/* Password */}
-      <div className="space-y-1.5">
-        <Label htmlFor="password" className="text-sm font-medium text-gray-700">Mot de passe</Label>
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, delay: 0.12 }}
+        className="space-y-1.5"
+      >
+        <Label htmlFor="password" className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+          Mot de passe
+        </Label>
         <div className="relative">
-          <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input id="password" type={showPwd ? "text" : "password"} placeholder="••••••••"
-            autoComplete="new-password" {...register("password")}
-            className={cn("pl-10 pr-10", fieldClass(!!errors.password))} />
-          <button type="button" onClick={() => setShowPwd(!showPwd)}
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+          <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-300" />
+          <Input
+            id="password"
+            type={showPwd ? "text" : "password"}
+            placeholder="••••••••"
+            autoComplete="new-password"
+            {...register("password")}
+            className={cn("pl-10 pr-10", inputClass(!!errors.password))}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPwd(!showPwd)}
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500 transition-colors"
+            aria-label={showPwd ? "Masquer" : "Afficher"}
+          >
             {showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
-        {errors.password && <p className="text-xs text-red-500">{errors.password.message}</p>}
-      </div>
+        <FieldError message={errors.password?.message} />
+      </motion.div>
 
-      {/* Confirm */}
-      <div className="space-y-1.5">
-        <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">
+      {/* Confirm password */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, delay: 0.18 }}
+        className="space-y-1.5"
+      >
+        <Label htmlFor="confirmPassword" className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
           Confirmer le mot de passe
         </Label>
         <div className="relative">
-          <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input id="confirmPassword" type={showPwd ? "text" : "password"} placeholder="••••••••"
-            autoComplete="new-password" {...register("confirmPassword")}
-            className={cn("pl-10", fieldClass(!!errors.confirmPassword))} />
+          <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-300" />
+          <Input
+            id="confirmPassword"
+            type={showPwd ? "text" : "password"}
+            placeholder="••••••••"
+            autoComplete="new-password"
+            {...register("confirmPassword")}
+            className={cn("pl-10", inputClass(!!errors.confirmPassword))}
+          />
         </div>
-        {errors.confirmPassword && <p className="text-xs text-red-500">{errors.confirmPassword.message}</p>}
-      </div>
+        <FieldError message={errors.confirmPassword?.message} />
+      </motion.div>
 
-      {/* Error */}
-      {error && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="rounded-xl bg-red-50 border border-red-200 px-4 py-3"
-        >
-          <p className="text-sm text-red-600">{error}</p>
-        </motion.div>
-      )}
+      {/* Global error */}
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -6, scale: 0.99 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.99 }}
+            transition={{ duration: 0.25 }}
+            className="flex items-center gap-2.5 rounded-lg bg-red-50 border border-red-200 px-4 py-3"
+          >
+            <AlertCircle className="h-4 w-4 text-red-500 shrink-0" />
+            <p className="text-sm text-red-600">{error}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Submit */}
-      <button
+      <motion.button
         type="submit"
         disabled={isSubmitting}
-        className="w-full h-11 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-sm shadow-sm shadow-emerald-200 hover:shadow-emerald-300 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2"
+        whileTap={{ scale: 0.99 }}
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, delay: 0.24 }}
+        className="w-full h-11 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-1 shadow-sm shadow-emerald-200"
       >
         {isSubmitting ? (
           <><Loader2 className="h-4 w-4 animate-spin" />Création du compte...</>
         ) : (
           "Créer mon compte gratuitement"
         )}
-      </button>
+      </motion.button>
     </motion.form>
   );
 }

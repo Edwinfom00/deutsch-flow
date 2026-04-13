@@ -2,40 +2,43 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { LoginForm } from "@/modules/auth/components/LoginForm";
 
-export const metadata: Metadata = { title: "Connexion" };
+export const metadata: Metadata = { title: "Connexion — DeutschFlow" };
 
 export default function LoginPage() {
   return (
-    <div className="space-y-7">
+    <div className="space-y-8">
       {/* Header */}
-      <div className="text-center space-y-2">
-        <div className="text-4xl mb-3">👋</div>
-        <h1 className="text-3xl font-bold font-heading text-gray-900">
-          Bon retour !
+      <div className="space-y-1.5">
+        <h1 className="text-2xl font-bold font-heading text-gray-900 tracking-tight">
+          Bon retour
         </h1>
-        <p className="text-gray-500">Continue ton apprentissage de l&apos;allemand</p>
+        <p className="text-sm text-gray-400">
+          Continue ton apprentissage là où tu t&apos;es arrêté.
+        </p>
       </div>
 
-      {/* Card */}
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-card p-8">
-        <LoginForm />
+      {/* Form */}
+      <LoginForm />
 
-        <div className="mt-6 pt-5 border-t border-gray-100 text-center">
-          <p className="text-sm text-gray-500">
-            Pas encore de compte ?{" "}
-            <Link
-              href="/register"
-              className="text-emerald-600 hover:text-emerald-700 font-semibold transition-colors"
-            >
-              Créer un compte gratuit
-            </Link>
-          </p>
+      {/* Divider */}
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-100" />
+        </div>
+        <div className="relative flex justify-center">
+          <span className="bg-white px-3 text-xs text-gray-300">ou</span>
         </div>
       </div>
 
-      {/* Social proof */}
+      {/* Switch */}
       <p className="text-center text-sm text-gray-400">
-        🇩🇪 Rejoint par <strong className="text-gray-600">2 400+</strong> apprenants francophones
+        Pas encore de compte ?{" "}
+        <Link
+          href="/register"
+          className="text-gray-900 font-semibold hover:text-emerald-600 transition-colors underline underline-offset-2"
+        >
+          Créer un compte gratuit
+        </Link>
       </p>
     </div>
   );
