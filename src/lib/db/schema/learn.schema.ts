@@ -185,3 +185,20 @@ export const wordDetailCache = pgTable("word_detail_cache", {
   tip: text("tip"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+
+// ─── Speak Scenarios Cache ────────────────────────────────────────────────────
+export const speakScenario = pgTable("speak_scenario", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  aiRole: text("ai_role").notNull(),
+  userRole: text("user_role").notNull(),
+  opener: text("opener").notNull(),
+  difficulty: text("difficulty").notNull(), // facile | moyen | difficile
+  sector: text("sector").notNull(),
+  level: text("level").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});

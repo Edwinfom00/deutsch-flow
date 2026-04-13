@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { exercise, spacedRepetition } from "@/lib/db/schema";
 import { assertAuth } from "@/lib/session";
 import { generateExercise } from "@/lib/ai/exercise-generator";
+import { parseAIJson } from "@/lib/ai/parse";
 import { anthropic, AI_MODEL, SYSTEM_PROMPT_BASE } from "@/lib/ai/client";
 import { eq, and, desc } from "drizzle-orm";
 import { nanoid } from "nanoid";
@@ -191,8 +192,7 @@ IMPORTANT: La définition principale doit être EN ALLEMAND, accessible pour un 
     });
 
     const raw = (response.content[0] as { type: string; text: string }).text;
-    const cleaned = raw.replace(/```json\n?|\n?```/g, "").trim();
-    detail = JSON.parse(cleaned);
+    detail = parseAIJson(raw);
 
     // Sauvegarder en cache
     await db.insert(wordDetailCache).values({
