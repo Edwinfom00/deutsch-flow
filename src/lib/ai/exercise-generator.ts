@@ -1,4 +1,5 @@
 import { anthropic, AI_MODEL, SYSTEM_PROMPT_BASE } from "./client";
+import { parseAIJson } from "./parse";
 import type {
   CEFRLevel,
   Sector,
@@ -426,15 +427,7 @@ Réponds UNIQUEMENT avec le JSON valide de l'exercice, sans texte autour.`;
   });
 
   const rawJson = (response.content[0] as { type: string; text: string }).text;
-
-  let content: ExerciseContent;
-  try {
-    content = JSON.parse(rawJson);
-  } catch {
-    // Tentative de nettoyage si le JSON est encadré par des backticks
-    const cleaned = rawJson.replace(/```json\n?|\n?```/g, "").trim();
-    content = JSON.parse(cleaned);
-  }
+  const content = parseAIJson<ExerciseContent>(rawJson);
 
   return {
     content,
@@ -636,8 +629,7 @@ IMPORTANT: Commence TOUJOURS par un point positif dans le feedback. Soit bienvei
   });
 
   const rawJson = (response.content[0] as { type: string; text: string }).text;
-  const cleaned = rawJson.replace(/```json\n?|\n?```/g, "").trim();
-  return JSON.parse(cleaned);
+  return parseAIJson(rawJson);
 }
 
 /**
@@ -680,6 +672,5 @@ Réponds en JSON:
   });
 
   const rawJson = (response.content[0] as { type: string; text: string }).text;
-  const cleaned = rawJson.replace(/```json\n?|\n?```/g, "").trim();
-  return JSON.parse(cleaned);
+  return parseAIJson(rawJson);
 }
