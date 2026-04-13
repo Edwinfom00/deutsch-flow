@@ -1,6 +1,6 @@
 export default function LearnLoading() {
   return (
-    <div className="p-5 max-w-4xl mx-auto space-y-6 animate-pulse">
+    <div className="p-5 max-w-5xl mx-auto space-y-6 animate-pulse">
       <div className="space-y-1">
         <div className="h-4 w-16 bg-gray-200 rounded-sm" />
         <div className="h-3 w-48 bg-gray-100 rounded-sm" />

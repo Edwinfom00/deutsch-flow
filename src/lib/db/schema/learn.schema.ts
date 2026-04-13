@@ -170,3 +170,18 @@ export const skillPerformance = pgTable("skill_performance", {
   weakExerciseTypes: jsonb("weak_exercise_types").notNull().default({}),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
+
+// ─── Word Detail Cache (détail IA mis en cache par exercice) ─────────────────
+export const wordDetailCache = pgTable("word_detail_cache", {
+  exerciseId: text("exercise_id").primaryKey()
+    .references(() => exercise.id, { onDelete: "cascade" }),
+  definitionDe: text("definition_de").notNull(),
+  definitionFr: text("definition_fr").notNull(),
+  wordType: text("word_type").notNull(),
+  plural: text("plural"),
+  sentences: jsonb("sentences").notNull(), // Array<{de,fr,context}>
+  synonyms: jsonb("synonyms").notNull().default([]),
+  antonyms: jsonb("antonyms").notNull().default([]),
+  tip: text("tip"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});

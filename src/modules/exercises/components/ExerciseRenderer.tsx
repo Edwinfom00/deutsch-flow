@@ -17,6 +17,8 @@ import { MatchingRenderer } from "./renderers/MatchingRenderer";
 import { HoerenMCRenderer, HoerenRFRenderer } from "./renderers/HoerenRenderer";
 import { GrammatikTransformationRenderer } from "./renderers/GrammatikTransformationRenderer";
 import { SprechenRenderer } from "./renderers/SprechenRenderer";
+import { ReihenfolgeRenderer } from "./renderers/ReihenfolgeRenderer";
+import { FehlerkorrekturRenderer } from "./renderers/FehlerkorrekturRenderer";
 
 export interface ExerciseResult {
   score: number;
@@ -153,8 +155,14 @@ function renderExercise(
   if (type === "VOCAB_FLASHCARD")
     return <FlashcardRenderer exercise={exercise as never} onAnswer={onAnswer} answered={answered} />;
 
-  if (type === "GRAMMATIK_ORDNEN" || type === "LESEN_REIHENFOLGE")
+  if (type === "GRAMMATIK_ORDNEN")
     return <SentenceBuilderRenderer exercise={exercise as never} onAnswer={onAnswer} answered={answered} />;
+
+  if (type === "LESEN_REIHENFOLGE")
+    return <ReihenfolgeRenderer exercise={exercise as never} onAnswer={onAnswer} answered={answered} />;
+
+  if (type === "GRAMMATIK_FEHLERKORREKTUR")
+    return <FehlerkorrekturRenderer exercise={exercise as never} onAnswer={onAnswer} answered={answered} />;
 
   if (type === "GRAMMATIK_TRANSFORMATION")
     return <GrammatikTransformationRenderer exercise={exercise as never} onAnswer={onAnswer} answered={answered} />;
