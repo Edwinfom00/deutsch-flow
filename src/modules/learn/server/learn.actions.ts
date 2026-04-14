@@ -316,6 +316,10 @@ export async function completeLearnSession(params: {
     }).where(eq(userProfile.userId, uid));
   }
 
+  // Vérifier et attribuer les badges mérités
+  const { checkAndAwardBadges } = await import("@/modules/gamification/server/badges.actions");
+  await checkAndAwardBadges();
+
   return { success: true };
 }
 
