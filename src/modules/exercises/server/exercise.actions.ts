@@ -5,6 +5,7 @@ import { exercise, userProgress, spacedRepetition, dailySession, xpEvent, userPr
 import { generateExercise, generateDailySession } from "@/lib/ai/exercise-generator";
 import { eq, and, lte, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
+import { computeSM2 } from "@/lib/sm2";
 import type { CEFRLevel, Sector, Skill } from "@/types";
 
 // ─── Générer et sauvegarder un exercice IA ────────────────────────────────────
@@ -83,31 +84,8 @@ export async function submitExerciseAnswer(params: {
   const now = new Date();
 
   // ── Algorithme SM-2 ──────────────────────────────────────────────────────
-  let newEaseFactor = sr?.easeFactor ?? 2.5;
-  let newInterval = sr?.interval ?? 1;
-  let newRepetitions = sr?.repetitions ?? 0;
-
-  if (quality >= 3) {
-    // Bonne réponse
-    if (newRepetitions === 0) newInterval = 1;
-    else if (newRepetitions === 1) newInterval = 6;
-    else newInterval = Math.round(newInterval * newEaseFactor);
-
-    newRepetitions += 1;
-  } else {
-    // Mauvaise réponse: revoir demain
-    newRepetitions = 0;
-    newInterval = 1;
-  }
-
-  // Mettre à jour l'ease factor
-  newEaseFactor = Math.max(
-    1.3,
-    newEaseFactor + 0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02)
-  );
-
-  const nextReviewAt = new Date();
-  nextReviewAt.setDate(nextReviewAt.getDate() + newInterval);
+  const { easeFactor: newEaseFactor, interval: newInterval, repetitions: newRepetitions, nextReviewAt } =
+    computeSM2(sr ?? null, quality);
 
   // 2. Upsert Spaced Repetition
   if (sr) {

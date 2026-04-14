@@ -203,6 +203,22 @@ export const speakScenario = pgTable("speak_scenario", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// ─── Mot du jour ─────────────────────────────────────────────────────────────
+// Une entrée par (date, level) — partagée entre tous les utilisateurs de ce niveau
+export const wordOfDay = pgTable("word_of_day", {
+  id: text("id").primaryKey(),
+  date: text("date").notNull(),   // YYYY-MM-DD
+  level: ceferLevelEnum("level").notNull(),
+  word: text("word").notNull(),
+  article: text("article"),       // der/die/das pour les noms
+  translation: text("translation").notNull(),
+  exampleDe: text("example_de").notNull(),
+  exampleFr: text("example_fr").notNull(),
+  wordType: text("word_type").notNull(), // Nomen / Verb / Adjektiv / etc.
+  tip: text("tip"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 // ─── Document Import ──────────────────────────────────────────────────────────
 export const documentImport = pgTable("document_import", {
   id: text("id").primaryKey(),

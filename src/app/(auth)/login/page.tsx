@@ -20,16 +20,6 @@ export default function LoginPage() {
       {/* Form */}
       <LoginForm />
 
-      {/* Divider */}
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-100" />
-        </div>
-        <div className="relative flex justify-center">
-          <span className="bg-white px-3 text-xs text-gray-300">ou</span>
-        </div>
-      </div>
-
       {/* Switch */}
       <p className="text-center text-sm text-gray-400">
         Pas encore de compte ?{" "}

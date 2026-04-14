@@ -5,17 +5,35 @@ import { motion } from "framer-motion";
 import { Volume2, VolumeX, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+/** Retourne une voix allemande disponible, en attendant le chargement si nécessaire. */
+function getDeVoice(): Promise<SpeechSynthesisVoice | null> {
+  return new Promise((resolve) => {
+    const synth = window.speechSynthesis;
+    const voices = synth.getVoices();
+    if (voices.length > 0) {
+      resolve(voices.find((v) => v.lang.startsWith("de")) ?? null);
+      return;
+    }
+    const onVoicesChanged = () => {
+      synth.removeEventListener("voiceschanged", onVoicesChanged);
+      resolve(synth.getVoices().find((v) => v.lang.startsWith("de")) ?? null);
+    };
+    synth.addEventListener("voiceschanged", onVoicesChanged);
+    // Timeout de sécurité si l'événement ne se déclenche jamais
+    setTimeout(() => { synth.removeEventListener("voiceschanged", onVoicesChanged); resolve(null); }, 2000);
+  });
+}
+
 function useTTS(text: string) {
   const [isPlaying, setIsPlaying] = useState(false);
 
-  const speak = useCallback(() => {
+  const speak = useCallback(async () => {
     if (!("speechSynthesis" in window)) return;
     window.speechSynthesis.cancel();
     const utt = new SpeechSynthesisUtterance(text);
     utt.lang = "de-DE";
     utt.rate = 0.88;
-    const voices = window.speechSynthesis.getVoices();
-    const deVoice = voices.find((v) => v.lang.startsWith("de"));
+    const deVoice = await getDeVoice();
     if (deVoice) utt.voice = deVoice;
     utt.onstart = () => setIsPlaying(true);
     utt.onend = () => setIsPlaying(false);

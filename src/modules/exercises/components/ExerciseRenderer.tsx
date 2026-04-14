@@ -173,6 +173,12 @@ function renderExercise(
   if (["LESEN_ZUORDNUNG","VOCAB_ZUORDNUNG","HOEREN_ZUORDNUNG","VOCAB_BILD"].includes(type))
     return <MatchingRenderer exercise={exercise as never} onAnswer={onAnswer} answered={answered} />;
 
+  if (type === "HOEREN_ERGAENZUNG")
+    return <FillInBlankRenderer exercise={exercise as never} onAnswer={onAnswer} answered={answered} />;
+
+  if (type === "VOCAB_SEKTOR")
+    return <FlashcardRenderer exercise={exercise as never} onAnswer={onAnswer} answered={answered} />;
+
   if (["SPRECHEN_DIALOG","SPRECHEN_ROLEPLAY","SPRECHEN_VORSTELLEN","SPRECHEN_DISKUSSION","SPRECHEN_BESCHREIBUNG"].includes(type))
     return <SprechenRenderer exercise={exercise as never} onAnswer={onAnswer} answered={answered} />;
 

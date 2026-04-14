@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { GoogleButton } from "./GoogleButton";
 
 const loginSchema = z.object({
   email: z.string().email("Email invalide"),
@@ -44,6 +45,20 @@ export function LoginForm() {
   if (isAuthenticated) return null;
 
   return (
+    <div className="space-y-5">
+      {/* Google */}
+      <GoogleButton callbackURL="/dashboard" label="Se connecter avec Google" />
+
+      {/* Divider */}
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-100" />
+        </div>
+        <div className="relative flex justify-center">
+          <span className="bg-white px-3 text-xs text-gray-300">ou avec un email</span>
+        </div>
+      </div>
+
     <motion.form
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
@@ -159,5 +174,6 @@ export function LoginForm() {
         )}
       </motion.button>
     </motion.form>
+    </div>
   );
 }

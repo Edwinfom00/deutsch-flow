@@ -73,8 +73,9 @@ export const useSessionStore = create<SessionStore>()(
 
       totalXpEarned: () => {
         const { exercises, results } = get();
-        return results.reduce((sum, r, i) => {
-          const xp = exercises[i]?.xpReward ?? 10;
+        const xpById = new Map(exercises.map((e) => [e.id, e.xpReward]));
+        return results.reduce((sum, r) => {
+          const xp = xpById.get(r.exerciseId) ?? 10;
           return sum + Math.round(xp * (r.score / 100));
         }, 0);
       },

@@ -95,9 +95,27 @@ export function LearnSession() {
 
           {/* Per-exercise recap */}
           <div className="space-y-2 text-left">
-            {results.map((r, i) => (
+            {results.map((r, i) => {
+              const exType = exercises.find((e) => e.id === r.exerciseId)?.type ?? "";
+              const typeLabel: Record<string, string> = {
+                LESEN_LUECKENTEXT: "Lire · texte lacunaire", LESEN_MULTIPLE_CHOICE: "Lire · QCM",
+                LESEN_RICHTIG_FALSCH: "Lire · Vrai/Faux", LESEN_ZUORDNUNG: "Lire · Correspondances",
+                SCHREIBEN_EMAIL: "Écrire · E-mail", SCHREIBEN_NOTIZ: "Écrire · Note",
+                SCHREIBEN_MEINUNG: "Écrire · Opinion", SCHREIBEN_BESCHREIBUNG: "Écrire · Description",
+                SCHREIBEN_ZUSAMMENFASSUNG: "Écrire · Résumé",
+                HOEREN_MULTIPLE_CHOICE: "Écouter · QCM", HOEREN_RICHTIG_FALSCH: "Écouter · Vrai/Faux",
+                HOEREN_ZUORDNUNG: "Écouter · Correspondances", HOEREN_ERGAENZUNG: "Écouter · Compléter",
+                SPRECHEN_VORLESEN: "Parler · Lecture", SPRECHEN_BESCHREIBUNG: "Parler · Description",
+                SPRECHEN_FRAGE: "Parler · Question",
+                VOCAB_LUECKENTEXT: "Vocab · Lacunaire", VOCAB_ZUORDNUNG: "Vocab · Correspondances",
+                VOCAB_BILD: "Vocab · Images", VOCAB_FLASHCARD: "Vocab · Flashcard",
+                VOCAB_SEKTOR: "Vocab · Secteur",
+                GRAMMATIK_LUECKENTEXT: "Grammaire · Lacunaire", GRAMMATIK_MULTIPLE_CHOICE: "Grammaire · QCM",
+                GRAMMATIK_UMFORMUNG: "Grammaire · Reformulation",
+              };
+              return (
               <div key={i} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-                <span className="text-xs text-gray-500">Exercice {i + 1}</span>
+                <span className="text-xs text-gray-500">{typeLabel[exType] ?? `Exercice ${i + 1}`}</span>
                 <div className="flex items-center gap-3">
                   <div className="h-1.5 w-20 bg-gray-100 rounded-sm overflow-hidden">
                     <div
@@ -108,7 +126,8 @@ export function LearnSession() {
                   <span className="text-xs font-semibold text-gray-700 w-8 text-right">{r.score}%</span>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
 
           <button

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, BookOpen, Mic, Zap, Trophy,
-  Settings, ChevronRight, Flame, LogOut, GraduationCap, Upload,
+  Settings, ChevronRight, Flame, LogOut, GraduationCap, Upload, BarChart2, Bot,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup,
@@ -30,11 +30,13 @@ const nav = [
         ],
       },
       { title: "Zone de Parole", href: "/speak", icon: Mic },
+      { title: "Tuteur IA", href: "/chat", icon: Bot },
     ],
   },
   {
     label: "Progression",
     items: [
+      { title: "Analytiques", href: "/analytics", icon: BarChart2 },
       { title: "Streak & XP", href: "/streak", icon: Flame },
       { title: "Badges", href: "/badges", icon: Trophy },
       { title: "Classement", href: "/league", icon: Zap },

@@ -6,7 +6,14 @@ import { assertAuth } from "@/lib/session";
 import { generateDailySession } from "@/lib/ai/exercise-generator";
 import { eq, and } from "drizzle-orm";
 import { nanoid } from "nanoid";
+import { computeSM2 } from "@/lib/sm2";
 import type { CEFRLevel, Sector, Skill } from "@/types";
+
+// XP cumulatif requis pour quitter chaque niveau (ex: A0 → A1 à 200 XP total)
+const LEVEL_UP_THRESHOLDS: Record<CEFRLevel, number> = {
+  A0: 200, A1: 500, A2: 800, B1: 1200, B2: 1800, C1: 2500, C2: Infinity,
+};
+const LEVEL_ORDER: CEFRLevel[] = ["A0", "A1", "A2", "B1", "B2", "C1", "C2"];
 
 type PartialResult = {
   exerciseId: string;
@@ -179,10 +186,29 @@ export async function completeLearnSession(params: {
   }
 
   const { userProfile, streakHistory, skillPerformance } = await import("@/lib/db/schema");
-  const { sql } = await import("drizzle-orm");
+
+  // Récupérer le profil pour le level-up
+  const currentProfile = await db.query.userProfile.findFirst({
+    where: (p, { eq }) => eq(p.userId, uid),
+  });
+
+  const newTotalXp = (currentProfile?.totalXp ?? 0) + totalXpEarned;
+  const currentLevel = (currentProfile?.level ?? "A0") as CEFRLevel;
+  const currentLevelIndex = LEVEL_ORDER.indexOf(currentLevel);
+
+  // Déterminer si un ou plusieurs niveaux sont franchis
+  let newLevel = currentLevel;
+  for (let i = currentLevelIndex; i < LEVEL_ORDER.length - 1; i++) {
+    if (newTotalXp >= LEVEL_UP_THRESHOLDS[LEVEL_ORDER[i]]) {
+      newLevel = LEVEL_ORDER[i + 1];
+    } else {
+      break;
+    }
+  }
 
   await db.update(userProfile).set({
-    totalXp: sql`${userProfile.totalXp} + ${totalXpEarned}`,
+    totalXp: newTotalXp,
+    ...(newLevel !== currentLevel ? { level: newLevel } : {}),
     lastActivityAt: new Date(),
     updatedAt: new Date(),
   }).where(eq(userProfile.userId, uid));
@@ -256,23 +282,8 @@ export async function completeLearnSession(params: {
       const [existing] = await db.select().from(spacedRepetition)
         .where(and(eq(spacedRepetition.userId, uid), eq(spacedRepetition.exerciseId, result.exerciseId)));
 
-      let ef = existing?.easeFactor ?? 2.5;
-      let interval = existing?.interval ?? 1;
-      let reps = existing?.repetitions ?? 0;
-
-      if (quality >= 3) {
-        if (reps === 0) interval = 1;
-        else if (reps === 1) interval = 6;
-        else interval = Math.round(interval * ef);
-        reps += 1;
-      } else {
-        reps = 0;
-        interval = 1;
-      }
-      ef = Math.max(1.3, ef + 0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
-
-      const nextReviewAt = new Date();
-      nextReviewAt.setDate(nextReviewAt.getDate() + interval);
+      const { easeFactor: ef, interval, repetitions: reps, nextReviewAt } =
+        computeSM2(existing ?? null, quality);
 
       if (existing) {
         await db.update(spacedRepetition).set({
@@ -314,6 +325,77 @@ export async function completeLearnSession(params: {
       longestStreak: Math.max(newStreak, profile?.longestStreak ?? 0),
       updatedAt: new Date(),
     }).where(eq(userProfile.userId, uid));
+  }
+
+  // ── Auto-capture vocabulaire ─────────────────────────────────────────────
+  // Transforme les paires VOCAB_ZUORDNUNG / VOCAB_BILD en flashcards perso
+  if (exerciseIds.length > 0) {
+    const { exercise: exerciseTable, spacedRepetition: srTable } = await import("@/lib/db/schema");
+    const { inArray, not } = await import("drizzle-orm");
+
+    const vocabExercises = await db.select().from(exerciseTable)
+      .where(
+        and(
+          inArray(exerciseTable.id, exerciseIds),
+          inArray(exerciseTable.type as never, ["VOCAB_ZUORDNUNG", "VOCAB_BILD"] as never[])
+        )
+      );
+
+    for (const ex of vocabExercises) {
+      const content = ex.content as { pairs?: Array<{ id: string; left: string; right: string }> };
+      if (!content.pairs) continue;
+
+      for (const pair of content.pairs) {
+        // left = mot allemand, right = traduction française (ZUORDNUNG)
+        // left = description image, right = mot allemand (BILD) — on inverse
+        const isVocabBild = ex.type === "VOCAB_BILD";
+        const wordDe = isVocabBild ? pair.right : pair.left;
+        const translationFr = isVocabBild ? pair.left : pair.right;
+
+        if (!wordDe || !translationFr) continue;
+
+        // Créer un exercice VOCAB_FLASHCARD minimal pour ce mot
+        const [newEx] = await db.insert(exerciseTable).values({
+          id: nanoid(),
+          type: "VOCAB_FLASHCARD" as never,
+          level: ex.level,
+          sector: ex.sector,
+          skill: "WORTSCHATZ" as never,
+          content: {
+            type: "VOCAB_FLASHCARD",
+            instructions: "Mémorise ce mot.",
+            word: wordDe,
+            translation: translationFr,
+            exampleSentence: "",
+            exampleTranslation: "",
+            synonyms: [],
+            tags: [ex.sector, ex.level],
+          } as never,
+          difficultyScore: ex.difficultyScore,
+          xpReward: ex.xpReward,
+          isAiGenerated: true,
+        }).returning().catch(() => []);
+
+        if (!newEx) continue;
+
+        // Ajouter en SM-2 seulement si ce mot n'est pas encore suivi
+        const alreadyTracked = await db.select().from(srTable)
+          .where(and(eq(srTable.userId, uid), eq(srTable.exerciseId, newEx.id)))
+          .limit(1);
+
+        if (alreadyTracked.length === 0) {
+          await db.insert(srTable).values({
+            id: nanoid(),
+            userId: uid,
+            exerciseId: newEx.id,
+            easeFactor: 2.5,
+            interval: 1,
+            repetitions: 0,
+            nextReviewAt: new Date(),
+          }).catch(() => {});
+        }
+      }
+    }
   }
 
   // Vérifier et attribuer les badges mérités

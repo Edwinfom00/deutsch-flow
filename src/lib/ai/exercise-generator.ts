@@ -5,14 +5,8 @@ import type {
   Sector,
   Skill,
   ExerciseContent,
-  MultipleChoiceExercise,
-  FillInTheBlankExercise,
-  TrueFalseExercise,
-  MatchingExercise,
-  FlashcardExercise,
   WritingExercise,
   SpeakingExercise,
-  SentenceBuilderExercise,
 } from "@/types";
 
 // ─── Référentiel Goethe/ÖSD ───────────────────────────────────────────────────
@@ -140,6 +134,40 @@ Format JSON exact:
   "imageDescription": "description détaillée de l'image fictive pour l'IA",
   "rubric": ["Décrire les éléments principaux", "Utiliser le bon temps", "Vocabulaire précis"],
   "minWords": 50,
+  "maxWords": 100
+}`,
+
+  SCHREIBEN_NOTIZ: `
+Génère un exercice SCHREIBEN NOTIZ (rédiger une note/message court) style Goethe A2/B1.
+Format JSON exact:
+{
+  "type": "SCHREIBEN_NOTIZ",
+  "instructions": "Rédige une note courte en allemand selon la situation.",
+  "prompt": "situation décrite en français (ex: laisser un message à un collègue)",
+  "rubric": [
+    "Mentionner l'information principale",
+    "Utiliser un ton approprié",
+    "Orthographe et grammaire correctes"
+  ],
+  "minWords": 20,
+  "maxWords": 50,
+  "tone": "informel"
+}`,
+
+  SCHREIBEN_ZUSAMMENFASSUNG: `
+Génère un exercice SCHREIBEN ZUSAMMENFASSUNG (résumer un texte) style Goethe B2/C1.
+Format JSON exact:
+{
+  "type": "SCHREIBEN_ZUSAMMENFASSUNG",
+  "instructions": "Lis le texte et rédige un résumé en allemand.",
+  "sourceText": "texte en allemand à résumer (150-250 mots)",
+  "prompt": "Résume ce texte en tes propres mots.",
+  "rubric": [
+    "Reprendre les idées principales",
+    "Ne pas copier les phrases du texte",
+    "Respecter la structure logique"
+  ],
+  "minWords": 60,
   "maxWords": 100
 }`,
 
@@ -489,9 +517,29 @@ export async function generateDailySession(
       { type: "SCHREIBEN_BESCHREIBUNG", skill: "SCHREIBEN" },
       { type: "GRAMMATIK_TRANSFORMATION", skill: "GRAMMATIK" },
     ],
+    C1: [
+      { type: "LESEN_REIHENFOLGE", skill: "LESEN" },
+      { type: "SCHREIBEN_MEINUNG", skill: "SCHREIBEN" },
+      { type: "HOEREN_MULTIPLE_CHOICE", skill: "HOEREN" },
+      { type: "GRAMMATIK_FEHLERKORREKTUR", skill: "GRAMMATIK" },
+      { type: "SPRECHEN_DISKUSSION", skill: "SPRECHEN" },
+      { type: "LESEN_LUECKENTEXT", skill: "LESEN" },
+      { type: "SCHREIBEN_BESCHREIBUNG", skill: "SCHREIBEN" },
+      { type: "GRAMMATIK_TRANSFORMATION", skill: "GRAMMATIK" },
+    ],
+    C2: [
+      { type: "LESEN_REIHENFOLGE", skill: "LESEN" },
+      { type: "SCHREIBEN_ZUSAMMENFASSUNG", skill: "SCHREIBEN" },
+      { type: "HOEREN_RICHTIG_FALSCH", skill: "HOEREN" },
+      { type: "GRAMMATIK_FEHLERKORREKTUR", skill: "GRAMMATIK" },
+      { type: "SPRECHEN_DISKUSSION", skill: "SPRECHEN" },
+      { type: "LESEN_LUECKENTEXT", skill: "LESEN" },
+      { type: "SCHREIBEN_MEINUNG", skill: "SCHREIBEN" },
+      { type: "GRAMMATIK_TRANSFORMATION", skill: "GRAMMATIK" },
+    ],
   };
 
-  const plan = basePlan[level] ?? basePlan["B2"];
+  const plan = basePlan[level] ?? basePlan["C2"];
 
   // ── Adaptation basée sur les lacunes ──────────────────────────────────────
   let adaptedPlan = [...plan];

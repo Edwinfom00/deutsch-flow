@@ -3,16 +3,15 @@
 import { db } from "@/lib/db";
 import { exercise, spacedRepetition, userProfile, dailySession } from "@/lib/db/schema";
 import { assertAuth } from "@/lib/session";
-import { generateExercise } from "@/lib/ai/exercise-generator";
 import { eq, and, lte, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
-import type { CEFRLevel, Sector, Skill } from "@/types";
+import { computeSM2 } from "@/lib/sm2";
 
 export async function getDueReviews() {
   const session = await assertAuth();
   const uid = session.user.id;
 
-  // Récupérer les entrées SM-2 dues + l'exercice original (pour type/skill/level)
+  // Récupérer les entrées SM-2 dues + l'exercice original
   const due = await db
     .select({ exercise, sr: spacedRepetition })
     .from(spacedRepetition)
@@ -37,71 +36,22 @@ export async function getDueReviews() {
   }).length;
   const totalTracked = all.length;
 
-  // Regénérer chaque exercice dû via l'IA (nouveau contenu, même type/skill/niveau)
-  const profile = await db.query.userProfile.findFirst({
-    where: (p, { eq }) => eq(p.userId, uid),
-  });
-
-  const regenerated = await Promise.all(
-    due.map(async (row) => {
-      try {
-        const generated = await generateExercise({
-          type: row.exercise.type,
-          level: row.exercise.level as CEFRLevel,
-          sector: (profile?.sector ?? row.exercise.sector) as Sector,
-          skill: row.exercise.skill as Skill,
-        });
-
-        // Sauvegarder le nouvel exercice généré
-        const [newEx] = await db.insert(exercise).values({
-          id: nanoid(),
-          type: row.exercise.type as never,
-          level: row.exercise.level,
-          sector: row.exercise.sector,
-          skill: row.exercise.skill,
-          content: generated.content as never,
-          difficultyScore: generated.difficultyScore,
-          xpReward: row.exercise.xpReward,
-          isAiGenerated: true,
-        }).returning();
-
-        // Mettre à jour la référence SM-2 vers le nouvel exercice
-        await db.update(spacedRepetition)
-          .set({ exerciseId: newEx.id, updatedAt: new Date() })
-          .where(eq(spacedRepetition.id, row.sr.id));
-
-        return {
-          srId: row.sr.id,
-          exerciseId: newEx.id,
-          type: newEx.type,
-          skill: newEx.skill,
-          level: newEx.level,
-          content: newEx.content,
-          xpReward: newEx.xpReward,
-          interval: row.sr.interval,
-          repetitions: row.sr.repetitions,
-          lastQuality: row.sr.lastQuality,
-        };
-      } catch {
-        // Fallback : utiliser l'exercice original si la regénération échoue
-        return {
-          srId: row.sr.id,
-          exerciseId: row.exercise.id,
-          type: row.exercise.type,
-          skill: row.exercise.skill,
-          level: row.exercise.level,
-          content: row.exercise.content,
-          xpReward: row.exercise.xpReward,
-          interval: row.sr.interval,
-          repetitions: row.sr.repetitions,
-          lastQuality: row.sr.lastQuality,
-        };
-      }
-    })
-  );
+  // Retourner les exercices originaux directement — pas de regénération IA au chargement
+  const reviews = due.map((row) => ({
+    srId: row.sr.id,
+    exerciseId: row.exercise.id,
+    type: row.exercise.type,
+    skill: row.exercise.skill,
+    level: row.exercise.level,
+    content: row.exercise.content,
+    xpReward: row.exercise.xpReward,
+    interval: row.sr.interval,
+    repetitions: row.sr.repetitions,
+    lastQuality: row.sr.lastQuality,
+  }));
 
   return {
-    due: regenerated,
+    due: reviews,
     stats: { dueToday, dueTomorrow, totalTracked },
   };
 }
@@ -123,23 +73,7 @@ export async function submitReview(params: {
   const now = new Date();
 
   // SM-2
-  let ef = sr.easeFactor;
-  let interval = sr.interval;
-  let reps = sr.repetitions;
-
-  if (quality >= 3) {
-    if (reps === 0) interval = 1;
-    else if (reps === 1) interval = 6;
-    else interval = Math.round(interval * ef);
-    reps += 1;
-  } else {
-    reps = 0;
-    interval = 1;
-  }
-  ef = Math.max(1.3, ef + 0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
-
-  const nextReviewAt = new Date();
-  nextReviewAt.setDate(nextReviewAt.getDate() + interval);
+  const { easeFactor: ef, interval, repetitions: reps, nextReviewAt } = computeSM2(sr, quality);
 
   await db.update(spacedRepetition).set({
     easeFactor: ef, interval, repetitions: reps,

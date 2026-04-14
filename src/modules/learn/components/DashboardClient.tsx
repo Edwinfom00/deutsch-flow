@@ -9,6 +9,10 @@ import {
 import { LEVEL_LABELS, SECTOR_LABELS, GOAL_LABELS, SECTOR_ICONS } from "@/types";
 import type { CEFRLevel, Sector, Goal } from "@/types";
 import type { getDashboardData } from "../server/dashboard.actions";
+import type { getWordOfDay } from "../server/word-of-day.actions";
+import { WordOfDayWidget } from "./WordOfDayWidget";
+
+type WordEntry = NonNullable<Awaited<ReturnType<typeof getWordOfDay>>>;
 
 type DashboardData = NonNullable<Awaited<ReturnType<typeof getDashboardData>>>;
 
@@ -19,12 +23,6 @@ const XP_PER_LEVEL: Record<CEFRLevel, number> = {
   A0: 200, A1: 500, A2: 800, B1: 1200, B2: 1800, C1: 2500, C2: 9999,
 };
 
-const quickActions = [
-  { label: "Commencer une leçon", sub: "Lesen · A2", href: "/learn", icon: BookOpen, color: "text-blue-500", bg: "bg-blue-50" },
-  { label: "Zone de Parole", sub: "Dialogue IA", href: "/speak", icon: Mic, color: "text-emerald-500", bg: "bg-emerald-50" },
-  { label: "Révisions du jour", sub: "Spaced repetition", href: "/review", icon: TrendingUp, color: "text-violet-500", bg: "bg-violet-50" },
-  { label: "Mes badges", sub: "Voir la progression", href: "/badges", icon: Trophy, color: "text-amber-500", bg: "bg-amber-50" },
-];
 
 const fadeUp = {
   hidden: { opacity: 0, y: 12 },
@@ -33,7 +31,7 @@ const fadeUp = {
 
 const card = "bg-white border border-gray-200/70 rounded-md shadow-[0_1px_3px_rgba(0,0,0,0.04)]";
 
-export function DashboardClient({ data }: { data: DashboardData }) {
+export function DashboardClient({ data, wordOfDay }: { data: DashboardData; wordOfDay: WordEntry | null }) {
   const { user, profile, todayXp, todayExercises, recentSessions } = data;
   const level = (profile?.level ?? "A0") as CEFRLevel;
   const nextLevel = LEVEL_NEXT[level];
@@ -42,6 +40,13 @@ export function DashboardClient({ data }: { data: DashboardData }) {
   const xpProgress = Math.min((totalXp % xpForNext) / xpForNext, 1);
   const dailyGoal = profile?.dailyGoalMinutes ?? 15;
   const streak = profile?.currentStreak ?? 0;
+
+  const quickActions = [
+    { label: "Commencer une leçon", sub: `Lesen · ${level}`, href: "/learn", icon: BookOpen, color: "text-blue-500", bg: "bg-blue-50" },
+    { label: "Zone de Parole", sub: "Dialogue IA", href: "/speak", icon: Mic, color: "text-emerald-500", bg: "bg-emerald-50" },
+    { label: "Révisions du jour", sub: "Spaced repetition", href: "/review", icon: TrendingUp, color: "text-violet-500", bg: "bg-violet-50" },
+    { label: "Mes badges", sub: "Voir la progression", href: "/badges", icon: Trophy, color: "text-amber-500", bg: "bg-amber-50" },
+  ];
 
   const last7 = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(Date.now() - (6 - i) * 86400000).toISOString().split("T")[0];
@@ -144,24 +149,33 @@ export function DashboardClient({ data }: { data: DashboardData }) {
             <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-4">
               Activité — 7 derniers jours
             </p>
-            <div className="flex items-end gap-1.5 h-16">
-              {last7.map((day, i) => {
-                const maxXp = Math.max(...last7.map((d) => d.xp), 1);
-                const pct = day.xp > 0 ? Math.max((day.xp / maxXp) * 100, 15) : 0;
-                const label = new Date(day.date).toLocaleDateString("fr-FR", { weekday: "short" });
-                return (
-                  <div key={day.date} className="flex-1 flex flex-col items-center gap-1">
-                    <motion.div
-                      className={`w-full rounded-sm ${day.done ? "bg-gray-900" : "bg-gray-100"}`}
-                      initial={{ height: 0 }}
-                      animate={{ height: day.xp > 0 ? `${pct}%` : "4px" }}
-                      transition={{ duration: 0.45, delay: i * 0.05 }}
-                    />
-                    <span className="text-[9px] text-gray-300 capitalize">{label}</span>
-                  </div>
-                );
-              })}
-            </div>
+            {(() => {
+              const BAR_MAX_H = 56; // px — hauteur max de la barre (hors label)
+              const maxXp = Math.max(...last7.map((d) => d.xp), 1);
+              const today = new Date().toISOString().split("T")[0];
+              return (
+                <div className="flex items-end gap-2">
+                  {last7.map((day, i) => {
+                    const barH = day.xp > 0 ? Math.max(Math.round((day.xp / maxXp) * BAR_MAX_H), 10) : 4;
+                    const label = new Date(day.date).toLocaleDateString("fr-FR", { weekday: "short" });
+                    const isToday = day.date === today;
+                    return (
+                      <div key={day.date} className="flex-1 flex flex-col items-center gap-1.5">
+                        <motion.div
+                          className={`w-full rounded-sm ${day.done ? "bg-emerald-500" : "bg-gray-200"}`}
+                          initial={{ height: 0 }}
+                          animate={{ height: barH }}
+                          transition={{ duration: 0.5, delay: i * 0.06, ease: [0.25, 0.1, 0.25, 1] }}
+                        />
+                        <span className={`text-[9px] capitalize ${isToday ? "text-blue-500 font-semibold" : "text-gray-400"}`}>
+                          {label}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </motion.div>
 
           {/* Quick actions */}
@@ -217,25 +231,41 @@ export function DashboardClient({ data }: { data: DashboardData }) {
               <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Objectif du jour</p>
               <Clock className="h-3.5 w-3.5 text-gray-300" />
             </div>
-            <div className="flex items-baseline gap-1 mb-2.5">
-              <span className="text-3xl font-bold text-gray-900 font-heading leading-none">{todayExercises}</span>
-              <span className="text-xs text-gray-400">/ 5 exercices</span>
-            </div>
-            <div className="h-1.5 bg-gray-100 rounded-sm overflow-hidden mb-2">
-              <motion.div
-                className={`h-full rounded-sm ${todayExercises >= 5 ? "bg-emerald-500" : "bg-gray-900"}`}
-                initial={{ width: 0 }}
-                animate={{ width: `${Math.min((todayExercises / 5) * 100, 100)}%` }}
-                transition={{ duration: 0.7, ease: [0.25, 0.1, 0.25, 1] }}
-              />
-            </div>
-            <p className="text-[11px] text-gray-400">
-              {todayExercises >= 5 ? "🎉 Objectif atteint !" : `${5 - todayExercises} restant${5 - todayExercises > 1 ? "s" : ""}`}
-            </p>
+            {(() => {
+              const goalExercises = dailyGoal <= 5 ? 3 : dailyGoal <= 15 ? 5 : 8;
+              const remaining = Math.max(0, goalExercises - todayExercises);
+              const done = todayExercises >= goalExercises;
+              return (
+                <>
+                  <div className="flex items-baseline gap-1 mb-2.5">
+                    <span className="text-3xl font-bold text-gray-900 font-heading leading-none">{todayExercises}</span>
+                    <span className="text-xs text-gray-400">/ {goalExercises} exercices</span>
+                  </div>
+                  <div className="h-1.5 bg-gray-100 rounded-sm overflow-hidden mb-2">
+                    <motion.div
+                      className={`h-full rounded-sm ${done ? "bg-emerald-500" : "bg-gray-900"}`}
+                      initial={{ width: 0 }}
+                      animate={{ width: `${Math.min((todayExercises / goalExercises) * 100, 100)}%` }}
+                      transition={{ duration: 0.7, ease: [0.25, 0.1, 0.25, 1] }}
+                    />
+                  </div>
+                  <p className="text-[11px] text-gray-400">
+                    {done ? "🎉 Objectif atteint !" : `${remaining} restant${remaining > 1 ? "s" : ""}`}
+                  </p>
+                </>
+              );
+            })()}
           </motion.div>
 
+          {/* Mot du jour */}
+          {wordOfDay && (
+            <motion.div custom={9} variants={fadeUp} initial="hidden" animate="visible">
+              <WordOfDayWidget word={wordOfDay} />
+            </motion.div>
+          )}
+
           {/* Streak card */}
-          <motion.div custom={9} variants={fadeUp} initial="hidden" animate="visible" className={card + " p-4"}>
+          <motion.div custom={10} variants={fadeUp} initial="hidden" animate="visible" className={card + " p-4"}>
             <div className="flex items-center justify-between mb-1">
               <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Streak actuel</p>
               <Flame className="h-3.5 w-3.5 text-orange-400" />
@@ -248,7 +278,7 @@ export function DashboardClient({ data }: { data: DashboardData }) {
               {last7.map((day) => (
                 <div
                   key={day.date}
-                  className={`flex-1 h-1.5 rounded-sm ${day.done ? "bg-orange-400" : "bg-gray-100"}`}
+                  className={`flex-1 h-1.5 rounded-sm ${day.done ? "bg-orange-400" : "bg-gray-200"}`}
                 />
               ))}
             </div>

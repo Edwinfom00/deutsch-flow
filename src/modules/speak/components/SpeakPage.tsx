@@ -60,14 +60,30 @@ function useSTT(onResult: (t: string) => void) {
   return { isListening, isSupported, start, stop };
 }
 
-function speakDE(text: string) {
+function getDeVoice(): Promise<SpeechSynthesisVoice | null> {
+  return new Promise((resolve) => {
+    const synth = window.speechSynthesis;
+    const voices = synth.getVoices();
+    if (voices.length > 0) {
+      resolve(voices.find((v) => v.lang.startsWith("de")) ?? null);
+      return;
+    }
+    const onVoicesChanged = () => {
+      synth.removeEventListener("voiceschanged", onVoicesChanged);
+      resolve(synth.getVoices().find((v) => v.lang.startsWith("de")) ?? null);
+    };
+    synth.addEventListener("voiceschanged", onVoicesChanged);
+    setTimeout(() => { synth.removeEventListener("voiceschanged", onVoicesChanged); resolve(null); }, 2000);
+  });
+}
+
+async function speakDE(text: string) {
   if (!("speechSynthesis" in window)) return;
   window.speechSynthesis.cancel();
   const utt = new SpeechSynthesisUtterance(text);
   utt.lang = "de-DE";
   utt.rate = 0.88;
-  const voices = window.speechSynthesis.getVoices();
-  const deVoice = voices.find((v) => v.lang.startsWith("de"));
+  const deVoice = await getDeVoice();
   if (deVoice) utt.voice = deVoice;
   window.speechSynthesis.speak(utt);
 }
@@ -80,7 +96,7 @@ type EvaluationResult = {
 
 export function SpeakPage({ initialData }: { initialData: SpeakData }) {
   const [scenarios, setScenarios] = useState<Scenario[]>(initialData.scenarios);
-  const { level, sector } = initialData;
+  const { level } = initialData;
   const [selected, setSelected] = useState<Scenario | null>(null);
   const [phase, setPhase] = useState<"select" | "chat" | "result">("select");
   const [messages, setMessages] = useState<Message[]>([]);
