@@ -72,6 +72,12 @@ function speakDE(text: string) {
   window.speechSynthesis.speak(utt);
 }
 
+type EvaluationResult = {
+  score: number; fluency: string; grammar: string; vocabulary: string;
+  corrections: Array<{ original: string; correction: string; explanation: string }>;
+  encouragement: string; usefulPhrases: string[];
+};
+
 export function SpeakPage({ initialData }: { initialData: SpeakData }) {
   const [scenarios, setScenarios] = useState<Scenario[]>(initialData.scenarios);
   const { level, sector } = initialData;
@@ -79,7 +85,7 @@ export function SpeakPage({ initialData }: { initialData: SpeakData }) {
   const [phase, setPhase] = useState<"select" | "chat" | "result">("select");
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
-  const [evaluation, setEvaluation] = useState<Record<string, unknown> | null>(null);
+  const [evaluation, setEvaluation] = useState<EvaluationResult | null>(null);
   const [isPending, startTransition] = useTransition();
   const [isEvaluating, setIsEvaluating] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -142,7 +148,7 @@ export function SpeakPage({ initialData }: { initialData: SpeakData }) {
     setIsEvaluating(true);
     startTransition(async () => {
       const ev = await evaluateConversation({ scenario: selected!, history, level });
-      setEvaluation(ev);
+      setEvaluation(ev as EvaluationResult);
       setIsEvaluating(false);
       setPhase("result");
     });
@@ -189,11 +195,7 @@ export function SpeakPage({ initialData }: { initialData: SpeakData }) {
 
   // ── Résultats ─────────────────────────────────────────────────────────────
   if (phase === "result" && evaluation) {
-    const ev = evaluation as {
-      score: number; fluency: string; grammar: string; vocabulary: string;
-      corrections: Array<{ original: string; correction: string; explanation: string }>;
-      encouragement: string; usefulPhrases: string[];
-    };
+    const ev = evaluation;
     const scoreColor = ev.score >= 75 ? "bg-emerald-500" : ev.score >= 50 ? "bg-amber-400" : "bg-red-400";
 
     return (
