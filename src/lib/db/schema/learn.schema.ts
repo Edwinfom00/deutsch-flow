@@ -202,3 +202,20 @@ export const speakScenario = pgTable("speak_scenario", {
   level: text("level").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+
+// ─── Document Import ──────────────────────────────────────────────────────────
+export const documentImport = pgTable("document_import", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  fileName: text("file_name").notNull(),
+  fileSize: integer("file_size").notNull(),
+  docType: text("doc_type").notNull(), // "exercises" | "modellsatz" | "grammar" | "unknown"
+  status: text("status").notNull().default("pending"), // pending | processing | done | error
+  extractedText: text("extracted_text"),
+  result: jsonb("result"), // { exerciseIds, modellsatzIds, chapters }
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});

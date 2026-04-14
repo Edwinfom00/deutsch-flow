@@ -6,46 +6,49 @@ import { MessageSquare, User, Bot, ChevronDown, ChevronUp, Mic, MicOff, Square }
 import { cn } from "@/lib/utils";
 
 // ── Web Speech API STT hook ───────────────────────────────────────────────────
+type SpeechRecognitionCtor = new () => {
+  lang: string; continuous: boolean; interimResults: boolean;
+  onresult: ((e: { results: { [i: number]: { [i: number]: { transcript: string } } } }) => void) | null;
+  onend: (() => void) | null;
+  onerror: (() => void) | null;
+  start(): void; stop(): void;
+};
+
+function getSR(): SpeechRecognitionCtor | null {
+  if (typeof window === "undefined") return null;
+  return (
+    (window as unknown as Record<string, unknown>).SpeechRecognition ??
+    (window as unknown as Record<string, unknown>).webkitSpeechRecognition ??
+    null
+  ) as SpeechRecognitionCtor | null;
+}
+
 function useSTT(onResult: (text: string) => void) {
   const [isListening, setIsListening] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
-  const recRef = useRef<SpeechRecognition | null>(null);
+  const recRef = useRef<{ stop(): void } | null>(null);
 
-  useEffect(() => {
-    const SpeechRecognition =
-      (window as unknown as { SpeechRecognition?: typeof window.SpeechRecognition }).SpeechRecognition ??
-      (window as unknown as { webkitSpeechRecognition?: typeof window.SpeechRecognition }).webkitSpeechRecognition;
-    setIsSupported(!!SpeechRecognition);
-  }, []);
+  useEffect(() => { setIsSupported(!!getSR()); }, []);
 
   const start = useCallback(() => {
-    const SpeechRecognition =
-      (window as unknown as { SpeechRecognition?: typeof window.SpeechRecognition }).SpeechRecognition ??
-      (window as unknown as { webkitSpeechRecognition?: typeof window.SpeechRecognition }).webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
-
-    const rec = new SpeechRecognition();
+    const SR = getSR();
+    if (!SR) return;
+    const rec = new SR();
     rec.lang = "de-DE";
     rec.continuous = false;
     rec.interimResults = false;
-
     rec.onresult = (e) => {
       const transcript = e.results[0]?.[0]?.transcript ?? "";
       if (transcript) onResult(transcript);
     };
     rec.onend = () => setIsListening(false);
     rec.onerror = () => setIsListening(false);
-
     recRef.current = rec;
     rec.start();
     setIsListening(true);
   }, [onResult]);
 
-  const stop = useCallback(() => {
-    recRef.current?.stop();
-    setIsListening(false);
-  }, []);
-
+  const stop = useCallback(() => { recRef.current?.stop(); setIsListening(false); }, []);
   return { isListening, isSupported, start, stop };
 }
 

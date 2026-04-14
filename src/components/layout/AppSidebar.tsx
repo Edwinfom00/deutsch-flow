@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, BookOpen, Mic, Zap, Trophy,
-  Settings, ChevronRight, Flame, LogOut, GraduationCap,
+  Settings, ChevronRight, Flame, LogOut, GraduationCap, Upload,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup,
@@ -43,6 +43,7 @@ const nav = [
   {
     label: "Compte",
     items: [
+      { title: "Importer un document", href: "/import", icon: Upload },
       { title: "Paramètres", href: "/settings", icon: Settings },
     ],
   },
