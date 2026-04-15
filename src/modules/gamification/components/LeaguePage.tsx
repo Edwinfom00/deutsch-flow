@@ -1,7 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Trophy, Zap, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { Trophy, Zap, TrendingUp, TrendingDown, Minus, UserCircle2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import type { getLeagueData } from "../server/league.actions";
 
@@ -19,6 +20,7 @@ const rankStyle = (rank: number) => {
 
 export function LeaguePage({ data }: { data: LeagueData }) {
   const { members, myUserId, myRank, myWeekXp, lastWeekXp, lastWeekRank, week } = data;
+  const router = useRouter();
 
   const xpDiff = myWeekXp - lastWeekXp;
   const rankDiff = lastWeekRank && myRank ? lastWeekRank - myRank : null;
@@ -96,12 +98,16 @@ export function LeaguePage({ data }: { data: LeagueData }) {
             const isMe = m.userId === myUserId;
             return (
               <div key={m.userId} className="flex flex-col items-center gap-2">
-                <div className={cn(
-                  "h-9 w-9 rounded-md flex items-center justify-center text-sm font-bold border",
-                  isMe ? "bg-gray-900 text-white border-gray-900" : `${rs.bg} ${rs.text} ${rs.border}`
-                )}>
+                <button
+                  onClick={() => router.push(`/league/${m.userId}`)}
+                  title={`Voir le profil de ${m.name}`}
+                  className={cn(
+                    "h-9 w-9 rounded-md flex items-center justify-center text-sm font-bold border transition-transform hover:scale-110",
+                    isMe ? "bg-gray-900 text-white border-gray-900" : `${rs.bg} ${rs.text} ${rs.border}`
+                  )}
+                >
                   {m.name.charAt(0).toUpperCase()}
-                </div>
+                </button>
                 <div className={cn(
                   "w-20 rounded-t-md flex flex-col items-center justify-end pb-2 border",
                   heights[i], rs.bg, rs.border
@@ -140,13 +146,15 @@ export function LeaguePage({ data }: { data: LeagueData }) {
 
 function MemberRow({ member, isMe, index }: { member: Member; isMe: boolean; index: number }) {
   const rs = rankStyle(member.rank);
+  const router = useRouter();
+
   return (
     <motion.div
       initial={{ opacity: 0, x: -6 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: index * 0.03 }}
       className={cn(
-        "flex items-center gap-3 px-4 py-3 transition-colors",
+        "flex items-center gap-3 px-4 py-3 transition-colors group",
         isMe && "bg-gray-50"
       )}
     >
@@ -170,12 +178,10 @@ function MemberRow({ member, isMe, index }: { member: Member; isMe: boolean; ind
 
       {/* Info */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <p className={cn("text-sm font-semibold truncate", isMe ? "text-gray-900" : "text-gray-700")}>
-            {member.name}
-            {isMe && <span className="ml-1.5 text-[10px] font-bold text-gray-400">(toi)</span>}
-          </p>
-        </div>
+        <p className={cn("text-sm font-semibold truncate", isMe ? "text-gray-900" : "text-gray-700")}>
+          {member.name}
+          {isMe && <span className="ml-1.5 text-[10px] font-bold text-gray-400">(toi)</span>}
+        </p>
         <p className="text-[10px] text-gray-400">Niveau {member.level}</p>
       </div>
 
@@ -184,6 +190,15 @@ function MemberRow({ member, isMe, index }: { member: Member; isMe: boolean; ind
         <p className="text-sm font-bold text-gray-900">{member.weekXp.toLocaleString("fr-FR")}</p>
         <p className="text-[10px] text-gray-400">XP</p>
       </div>
+
+      {/* Bouton profil — visible au hover */}
+      <button
+        onClick={() => router.push(`/league/${member.userId}`)}
+        title={`Voir le profil de ${member.name}`}
+        className="h-7 w-7 rounded-md border border-gray-200 bg-white flex items-center justify-center text-gray-300 hover:text-gray-700 hover:border-gray-400 transition-all opacity-0 group-hover:opacity-100 shrink-0"
+      >
+        <UserCircle2 className="h-3.5 w-3.5" />
+      </button>
     </motion.div>
   );
 }

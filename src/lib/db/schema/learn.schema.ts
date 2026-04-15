@@ -227,11 +227,65 @@ export const documentImport = pgTable("document_import", {
     .references(() => user.id, { onDelete: "cascade" }),
   fileName: text("file_name").notNull(),
   fileSize: integer("file_size").notNull(),
-  docType: text("doc_type").notNull(), // "exercises" | "modellsatz" | "grammar" | "unknown"
-  status: text("status").notNull().default("pending"), // pending | processing | done | error
+  docType: text("doc_type").notNull(),
+  status: text("status").notNull().default("pending"),
   extractedText: text("extracted_text"),
-  result: jsonb("result"), // { exerciseIds, modellsatzIds, chapters }
+  result: jsonb("result"),
   errorMessage: text("error_message"),
+  isPublic: boolean("is_public").notNull().default(false),
+  publishedAt: timestamp("published_at"),
+  level: ceferLevelEnum("level"),  // niveau CEFR du document (pour filtrage communauté)
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// ─── Imported Exercise (séparé des exercices de session) ─────────────────────
+export const importedExercise = pgTable("imported_exercise", {
+  id: text("id").primaryKey(),
+  importId: text("import_id")
+    .notNull()
+    .references(() => documentImport.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  type: exerciseTypeEnum("type").notNull(),
+  level: ceferLevelEnum("level").notNull(),
+  sector: sectorEnum("sector").notNull().default("QUOTIDIEN"),
+  skill: skillEnum("skill").notNull(),
+  content: jsonb("content").notNull(),
+  xpReward: integer("xp_reward").notNull().default(15),
+  difficultyScore: real("difficulty_score").notNull().default(0.5),
+  isGenerated: boolean("is_generated").notNull().default(false), // true = généré "dans le même sens"
+  orderIndex: integer("order_index").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// ─── Imported Exercise Result ─────────────────────────────────────────────────
+export const importedExerciseResult = pgTable("imported_exercise_result", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  importedExerciseId: text("imported_exercise_id")
+    .notNull()
+    .references(() => importedExercise.id, { onDelete: "cascade" }),
+  score: real("score").notNull(),
+  timeSpentSeconds: integer("time_spent_seconds").notNull().default(0),
+  completedAt: timestamp("completed_at").notNull().defaultNow(),
+});
+
+// ─── Level Test Attempt ───────────────────────────────────────────────────────
+export const levelTestAttempt = pgTable("level_test_attempt", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  fromLevel: ceferLevelEnum("from_level").notNull(),
+  toLevel: ceferLevelEnum("to_level").notNull(),
+  status: text("status").notNull().default("pending"), // pending | passed | failed
+  score: real("score"),
+  exerciseIds: jsonb("exercise_ids").notNull().default([]),
+  results: jsonb("results").notNull().default([]),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  completedAt: timestamp("completed_at"),
 });

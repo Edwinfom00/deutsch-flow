@@ -22,6 +22,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         userName={session.user.name}
         userEmail={session.user.email}
         level={profile?.level ?? "A0"}
+        totalXp={profile?.totalXp ?? 0}
       />
       <SidebarInset className="bg-[#f9f9f9] min-h-screen">
         <DashboardHeader

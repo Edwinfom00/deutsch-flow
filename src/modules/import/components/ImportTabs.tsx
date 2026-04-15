@@ -49,8 +49,8 @@ export function ImportTabs({ initialImports, exercises, modellsatz, grammar }: P
         </p>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1.5 border-b border-gray-100 pb-0">
+      {/* Tabs — scrollable sur mobile */}
+      <div className="flex border-b border-gray-100 overflow-x-auto scrollbar-none -mx-5 px-5">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = active === tab.id;
@@ -58,18 +58,19 @@ export function ImportTabs({ initialImports, exercises, modellsatz, grammar }: P
             <button
               key={tab.id}
               onClick={() => setActive(tab.id)}
+              title={tab.desc}
               className={cn(
-                "flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-md border border-b-0 transition-all relative -mb-px",
+                "flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium rounded-t-md border border-b-0 transition-all relative -mb-px shrink-0 whitespace-nowrap",
                 isActive
                   ? "bg-white border-gray-200 text-gray-900 z-10"
                   : "bg-transparent border-transparent text-gray-400 hover:text-gray-600"
               )}
             >
-              <Icon className="h-3.5 w-3.5" />
+              <Icon className="h-3.5 w-3.5 shrink-0" />
               {tab.label}
               {counts[tab.id] > 0 && (
                 <span className={cn(
-                  "text-[9px] font-bold px-1.5 py-0.5 rounded-sm",
+                  "text-[9px] font-bold px-1.5 py-0.5 rounded-sm shrink-0",
                   tab.id === "upload"
                     ? "bg-blue-100 text-blue-600"
                     : "bg-gray-100 text-gray-500"

@@ -1,0 +1,1096 @@
+{
+  "MATCHING_HEADLINES": [
+    {
+      "id": "aufgabe1_lesen",
+      "type": "MATCHING_HEADLINES",
+      "level": "B1",
+      "skill": "LESEN",
+      "texts": [
+        {
+          "id": 1,
+          "source": "[aus einer österreichischen Zeitschrift]",
+          "content": "In Österreich nutzen 41 Prozent der Kinder im Alter von drei bis sechs Jahren öfters das Internet. Das ergab eine Umfrage unter Eltern im Auftrag der Initiative Saferinternet.at, die am Donnerstag auf einer Pressekonferenz präsentiert wurde. Die liebsten Beschäftigungen der Kleinen im Netz: spielen sowie Fotos und Videos anschauen. 52 Prozent der Drei- bis Sechsjährigen waren zumindest schon einmal im Internet. 41 Prozent nutzen es mindestens einmal pro Woche.",
+          "correctAnswer": "I"
+        },
+        {
+          "id": 2,
+          "source": "[aus einer österreichischen Tageszeitung]",
+          "content": "Ein ungewöhnlicher Vorfall passierte vor kurzem in einer Filiale der AB-Bank. Versehentlich gab ein Bankomat nicht 10-Euro-Scheine, sondern 100-Euro-Scheine aus, ohne das Geld vom Konto abzurechnen. Viele Kunden freuten sich, doch leider dauerte der „Geldregen\" nur kurz. „Eine Mitarbeiterin hat einen Fehler gemacht. Sie hat die falschen Geldscheine in den Bankomaten gegeben\", sagt ein Sprecher der Bank. „Alle Kunden werden verständigt. Leider müssen wir das Geld natürlich auch vom Konto abbuchen.\"",
+          "correctAnswer": "F"
+        },
+        {
+          "id": 3,
+          "source": "[aus einer österreichischen Zeitung]",
+          "content": "Heimische Mobilfunkanbieter wie Delight Mobile, Lycamobile, Vectone oder eety werben jetzt mit besonders günstigen Tarifen. So sind zum Beispiel Anrufe nach Asien, Afrika oder Amerika schon ab einem Cent pro Minute möglich. Die Anbieter verkaufen ihre Startersets über Handyshops, Trafiken oder über das Internet. Ohne solche Anbieter wäre es für viele Menschen in Österreich schwer, Kontakt zu Familie oder Freunden im Herkunftsland zu halten.",
+          "correctAnswer": "H"
+        },
+        {
+          "id": 4,
+          "source": "[aus einer österreichischen Wirtschaftszeitung]",
+          "content": "Durch die Finanzkrise ist die Sparfreude der Österreicher kleiner geworden. Viele haben Erspartes abgehoben, um Häuser oder Wohnungen zu kaufen. Von monatlichen Einkommen wird mehr ausgegeben und weniger gespart. Die Sparquote (Anteil des Sparens am verfügbaren Einkommen) liegt mit 7,4 Prozent auf dem niedrigsten Stand seit den 1950er Jahren. Dass die Menschen in schwierigen Zeiten lieber Geld ausgeben als zu sparen, halten Ökonomen für wichtig. Damit werde die Wirtschaft belebt.",
+          "correctAnswer": "C"
+        },
+        {
+          "id": 5,
+          "source": "[aus einer österreichischen Internetzeitung]",
+          "content": "Für eine aktuelle Untersuchung wurden 1 000 Personen befragt, ob sie das Internet zum Lösen von Alltagsproblemen nutzen und sich Tipps und Hinweise holen. 82 Prozent gaben an, durch Videos oder ähnliche Anleitungen Neues zu lernen. Beim Kochen und Ausprobieren von Rezepten wird das Internet besonders gerne als Helfer genutzt. „Das Internet macht uns nicht dümmer, sondern klüger\", sagt die Leiterin der Studie.",
+          "correctAnswer": "B"
+        }
+      ],
+      "sector": "QUOTIDIEN",
+      "xpReward": 20,
+      "headlines": [
+        {
+          "id": "A",
+          "text": "Handyverträge für Familien kosten weniger"
+        },
+        {
+          "id": "B",
+          "text": "Großes Interesse an Informationen aus dem Internet"
+        },
+        {
+          "id": "C",
+          "text": "Österreicher sparen weniger"
+        },
+        {
+          "id": "D",
+          "text": "Mehr Sicherheit für Kinder im Internet"
+        },
+        {
+          "id": "E",
+          "text": "Umfragen im Internet immer beliebter"
+        },
+        {
+          "id": "F",
+          "text": "Probleme bei der Geldausgabe wieder gelöst"
+        },
+        {
+          "id": "G",
+          "text": "Sparen statt Geld ausgeben"
+        },
+        {
+          "id": "H",
+          "text": "Billig ins Ausland telefonieren"
+        },
+        {
+          "id": "I",
+          "text": "Schon Kinder regelmäßig online"
+        },
+        {
+          "id": "K",
+          "text": "Falsche 10- und 100-Euro-Scheine in einer Bank gefunden"
+        }
+      ],
+      "maxPoints": 25,
+      "timeLimit": 1200,
+      "answerGrid": {
+        "1": "I",
+        "2": "F",
+        "3": "H",
+        "4": "C",
+        "5": "B"
+      },
+      "instructions": {
+        "DE": "Lesen Sie die 10 Überschriften auf Blatt 1 und die 5 Texte auf Blatt 2. Suchen Sie dann zu jedem Text (1–5) die passende Überschrift (A–K) und schreiben Sie den Buchstaben auf die Linie über dem Text. Pro Text gibt es nur eine richtige Lösung.",
+        "FR": "Lisez les 10 titres et les 5 textes. Associez chaque texte (1–5) au titre correspondant (A–K). Il n'y a qu'une seule bonne réponse par texte."
+      },
+      "scoringRules": {
+        "note": "Jede Lösung wird gesondert bewertet. Korrekte Lösungen werden auch dann als richtig gewertet, wenn ein Buchstabe mehr als einmal verwendet wird.",
+        "table": [
+          {
+            "points": 25,
+            "correct": 5
+          },
+          {
+            "points": 20,
+            "correct": 4
+          },
+          {
+            "points": 15,
+            "correct": 3
+          },
+          {
+            "points": 10,
+            "correct": 2
+          },
+          {
+            "points": 5,
+            "correct": 1
+          },
+          {
+            "points": 0,
+            "correct": 0
+          }
+        ],
+        "perCorrectAnswer": 5
+      },
+      "difficultyScore": 0.7
+    },
+    {
+      "type": "MATCHING_HEADLINES",
+      "level": "B1",
+      "skill": "LESEN",
+      "texts": [
+        {
+          "id": 1,
+          "source": "aus einer österreichischen Zeitschrift",
+          "content": "In Österreich nutzen 41 Prozent der Kinder im Alter von drei bis sechs Jahren öfters das Internet. Das ergab eine Umfrage unter Eltern im Auftrag der Initiative Saferinternet.at, die am Donnerstag auf einer Pressekonferenz präsentiert wurde. Die liebsten Beschäftigungen der Kleinen im Netz: spielen sowie Fotos und Videos anschauen. 52 Prozent der Drei- bis Sechsjährigen waren zumindest schon einmal im Internet. 41 Prozent nutzen es mindestens einmal pro Woche."
+        },
+        {
+          "id": 2,
+          "source": "aus einer österreichischen Tageszeitung",
+          "content": "Ein ungewöhnlicher Vorfall passierte vor kurzem in einer Filiale der AB-Bank. Versehentlich gab ein Bankomat nicht 10-Euro-Scheine, sondern 100-Euro-Scheine aus, ohne das Geld vom Konto abzurechnen. Viele Kunden freuten sich, doch leider dauerte der „Geldregen\" nur kurz. „Eine Mitarbeiterin hat einen Fehler gemacht. Sie hat die falschen Geldscheine in den Bankomaten gegeben\", sagt ein Sprecher der Bank. „Alle Kunden werden verständigt. Leider müssen wir das Geld natürlich auch vom Konto abbuchen.\""
+        },
+        {
+          "id": 3,
+          "source": "aus einer österreichischen Zeitung",
+          "content": "Heimische Mobilfunkanbieter wie Delight Mobile, Lycamobile, Vectone oder eety werben jetzt mit besonders günstigen Tarifen. So sind zum Beispiel Anrufe nach Asien, Afrika oder Amerika schon ab einem Cent pro Minute möglich. Die Anbieter verkaufen ihre Startersets über Handyshops, Trafiken oder über das Internet. Ohne solche Anbieter wäre es für viele Menschen in Österreich schwer, Kontakt zu Familie oder Freunden im Herkunftsland zu halten."
+        },
+        {
+          "id": 4,
+          "source": "aus einer österreichischen Wirtschaftszeitung",
+          "content": "Durch die Finanzkrise ist die Sparfreude der Österreicher kleiner geworden. Viele haben Erspartes abgehoben, um Häuser oder Wohnungen zu kaufen. Von monatlichen Einkommen wird mehr ausgegeben und weniger gespart. Die Sparquote (Anteil des Sparens am verfügbaren Einkommen) liegt mit 7,4 Prozent auf dem niedrigsten Stand seit den 1950er Jahren. Dass die Menschen in schwierigen Zeiten lieber Geld ausgeben als zu sparen, halten Ökonomen für wichtig. Damit werde die Wirtschaft belebt."
+        },
+        {
+          "id": 5,
+          "source": "aus einer österreichischen Internetzeitung",
+          "content": "Für eine aktuelle Untersuchung wurden 1 000 Personen befragt, ob sie das Internet zum Lösen von Alltagsproblemen nutzen und sich Tipps und Hinweise holen. 82 Prozent gaben an, durch Videos oder ähnliche Anleitungen Neues zu lernen. Beim Kochen und Ausprobieren von Rezepten wird das Internet besonders gerne als Helfer genutzt. „Das Internet macht uns nicht dümmer, sondern klüger\", sagt die Leiterin der Studie."
+        }
+      ],
+      "sector": "QUOTIDIEN",
+      "xpReward": 20,
+      "headlines": [
+        {
+          "id": "A",
+          "text": "Handyverträge für Familien kosten weniger"
+        },
+        {
+          "id": "B",
+          "text": "Großes Interesse an Informationen aus dem Internet"
+        },
+        {
+          "id": "C",
+          "text": "Österreicher sparen weniger"
+        },
+        {
+          "id": "D",
+          "text": "Mehr Sicherheit für Kinder im Internet"
+        },
+        {
+          "id": "E",
+          "text": "Umfragen im Internet immer beliebter"
+        },
+        {
+          "id": "F",
+          "text": "Probleme bei der Geldausgabe wieder gelöst"
+        },
+        {
+          "id": "G",
+          "text": "Sparen statt Geld ausgeben"
+        },
+        {
+          "id": "H",
+          "text": "Billig ins Ausland telefonieren"
+        },
+        {
+          "id": "I",
+          "text": "Schon Kinder regelmäßig online"
+        },
+        {
+          "id": "K",
+          "text": "Falsche 10- und 100-Euro-Scheine in einer Bank gefunden"
+        }
+      ],
+      "maxPoints": 25,
+      "timeLimit": 1200,
+      "answerGrid": {
+        "1": null,
+        "2": null,
+        "3": null,
+        "4": null,
+        "5": null
+      },
+      "instructions": {
+        "DE": "Lesen Sie die 10 Überschriften und die 5 Texte. Suchen Sie dann zu jedem Text (1–5) die passende Überschrift (A–K). Pro Text gibt es nur eine richtige Lösung.",
+        "FR": "Lisez les 10 titres et les 5 textes. Trouvez pour chaque texte (1–5) le titre correspondant (A–K). Il n'y a qu'une seule bonne réponse par texte."
+      },
+      "scoringRules": {
+        "table": [
+          {
+            "points": 25,
+            "correct": 5
+          },
+          {
+            "points": 20,
+            "correct": 4
+          },
+          {
+            "points": 15,
+            "correct": 3
+          },
+          {
+            "points": 10,
+            "correct": 2
+          },
+          {
+            "points": 5,
+            "correct": 1
+          },
+          {
+            "points": 0,
+            "correct": 0
+          }
+        ],
+        "maxTotal": 25,
+        "perCorrectAnswer": 5
+      },
+      "correctAnswers": {
+        "1": "I",
+        "2": "F",
+        "3": "H",
+        "4": "C",
+        "5": "B"
+      },
+      "difficultyScore": 0.7
+    }
+  ],
+  "MULTIPLE_CHOICE_READING": [
+    {
+      "id": "aufgabe2_lesen",
+      "type": "MULTIPLE_CHOICE_READING",
+      "level": "B1",
+      "skill": "LESEN",
+      "sector": "QUOTIDIEN",
+      "example": {
+        "options": [
+          {
+            "id": "A",
+            "text": "haben wenige Babys bei den Eltern geschlafen."
+          },
+          {
+            "id": "B",
+            "text": "hatten reiche Menschen Kinderzimmer."
+          },
+          {
+            "id": "C",
+            "text": "war es für die Kinder bei den Eltern sicherer."
+          }
+        ],
+        "question": "Vor ungefähr einhundert Jahren",
+        "correctAnswer": "B"
+      },
+      "xpReward": 20,
+      "maxPoints": 25,
+      "questions": [
+        {
+          "id": 6,
+          "stem": "Die Frage, ab wann Kinder im eigenen Bett schlafen sollten,",
+          "options": [
+            {
+              "id": "A",
+              "text": "beantworten Experten unterschiedlich."
+            },
+            {
+              "id": "B",
+              "text": "ist für jedes Kind anders zu beantworten."
+            },
+            {
+              "id": "C",
+              "text": "muss in einer Beratung besprochen werden."
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "id": 7,
+          "stem": "Babys brauchen in den ersten Monaten",
+          "options": [
+            {
+              "id": "A",
+              "text": "intensiven Kontakt zu den Eltern."
+            },
+            {
+              "id": "B",
+              "text": "Kontakt zu möglichst vielen Personen."
+            },
+            {
+              "id": "C",
+              "text": "mehrere Treffen mit Familienberatern."
+            }
+          ],
+          "correctAnswer": "A"
+        },
+        {
+          "id": 8,
+          "stem": "Wenn Neugeborene allein im Bett schlafen,",
+          "options": [
+            {
+              "id": "A",
+              "text": "brauchen sie länger Muttermilch."
+            },
+            {
+              "id": "B",
+              "text": "kann das negativ für ihre Persönlichkeit sein."
+            },
+            {
+              "id": "C",
+              "text": "können sie öfter krank werden."
+            }
+          ],
+          "correctAnswer": "B"
+        },
+        {
+          "id": 9,
+          "stem": "Ein Kinderbett im Zimmer der Erwachsenen ist gut, weil Babys",
+          "options": [
+            {
+              "id": "A",
+              "text": "dann seltener Fieber bekommen."
+            },
+            {
+              "id": "B",
+              "text": "dort länger schlafen."
+            },
+            {
+              "id": "C",
+              "text": "dort ruhiger schlafen."
+            }
+          ],
+          "correctAnswer": "C"
+        },
+        {
+          "id": 10,
+          "stem": "Kinder sollten",
+          "options": [
+            {
+              "id": "A",
+              "text": "nach ihrem 3. Geburtstag ein eigenes Bett haben."
+            },
+            {
+              "id": "B",
+              "text": "schon im Babyalter im eigenen Zimmer schlafen."
+            },
+            {
+              "id": "C",
+              "text": "selbst entscheiden, wo sie schlafen wollen."
+            }
+          ],
+          "correctAnswer": "A"
+        }
+      ],
+      "timeLimit": 2100,
+      "readingText": {
+        "title": "Babys im Elternbett",
+        "source": "[aus einer österreichischen Tageszeitung]",
+        "content": "Babys schliefen seit Urzeiten bei ihren Eltern, weil es sicherer und praktischer war. Erst vor ungefähr 100 Jahren bekamen Kinder reicher Leute ein eigenes Bett oder Zimmer. Die meisten Menschen konnten sich das aber lange nicht leisten.\n\nAb wann soll das Kind nun heraus aus dem Elternbett und Schlafzimmer? Über den richtigen Zeitpunkt gehen die Meinungen der Experten auseinander. Die einen sagen Entwicklungsschäden voraus, sollte das Baby nach sechs Monaten noch immer im Elternbett schlafen. Die anderen sehen ähnliche Folgen – allerdings, weil das Kind zu kurze Zeit im Elternbett schlafen durfte.\n\n„Die Eltern können sich nicht entscheiden, weil es so viel Unwissen gibt\", sagt die Psychotherapeutin und Familienberaterin Martina Leibovici-Mühlberger. Eines ist allerdings sicher: Für ein Neugeborenes ist die Nähe zu seinen Bezugspersonen, im Allgemeinen Mutter und Vater, lebenswichtig. Aber nicht nur das. Säuglinge brauchen neben räumlicher Nähe zu Eltern oder Geschwistern auch den direkten Körperkontakt mit der Mutter oder dem Vater.\n\n„Für so ein kleines Kind bedeutet das Liegen in einem eigenen Bett eine unglaubliche Verlorenheit. Das könnte zu Problemen in der psychischen Entwicklung führen\", betont Leibovici-Mühlberger. Die Sechs-Monate-Grenze steht für sie im Zusammenhang mit der WHO-Empfehlung, dass Babys mindestens sechs Monate Muttermilch trinken sollten. In dieser Zeit ist es sicherlich das Natürlichste und Einfachste, das Kind bei sich im Bett zu haben.\n\nDie deutsche Akademie für Kinderheilkunde und Jugendmedizin warnt allerdings vor einer Überwärmung des Babys im gemeinsamen Bett. Ein Kinderbett im Elternschlafzimmer habe dafür den Vorteil, dass die Atemgeräusche der Eltern das Kind beruhigen. Auch beruhigend für das Kind ist, wenn es die Bewegungen der Eltern im Zimmer hört.\n\nEin eigenes Zimmer wird übrigens frühestens nach dem zweiten Lebensjahr aktuell. Mit drei bis vier Jahren sollte der Nachwuchs allerdings für immer aus dem elterlichen Bett ausziehen. „Dann hat das Kind schon ein eigenes soziales Leben. Da wird das eigene Bett zum Symbol für größere Selbstständigkeit\", sagt Leibovici-Mühlberger.",
+        "glossary": [
+          {
+            "term": "WHO",
+            "definition": "Weltgesundheitsorganisation"
+          }
+        ],
+        "subtitle": "Neugeborene brauchen Nähe, ab dem dritten Lebensjahr ist Selbstständigkeit wichtig"
+      },
+      "instructions": {
+        "DE": "Lesen Sie zuerst den Zeitungsartikel und lösen Sie dann die fünf Aufgaben. Kreuzen Sie die richtige Antwort (A, B oder C) an. Für jede Aufgabe gibt es nur eine richtige Lösung.",
+        "FR": "Lisez d'abord l'article de journal, puis résolvez les cinq exercices en cochant la bonne réponse (A, B ou C). Il n'y a qu'une seule bonne réponse par question."
+      },
+      "scoringRules": {
+        "table": [
+          {
+            "points": 25,
+            "correct": 5
+          },
+          {
+            "points": 20,
+            "correct": 4
+          },
+          {
+            "points": 15,
+            "correct": 3
+          },
+          {
+            "points": 10,
+            "correct": 2
+          },
+          {
+            "points": 5,
+            "correct": 1
+          },
+          {
+            "points": 0,
+            "correct": 0
+          }
+        ],
+        "perCorrectAnswer": 5
+      },
+      "difficultyScore": 0.7
+    },
+    {
+      "type": "MULTIPLE_CHOICE_READING",
+      "level": "B1",
+      "skill": "LESEN",
+      "sector": "QUOTIDIEN",
+      "example": {
+        "id": 0,
+        "options": [
+          {
+            "id": "A",
+            "text": "haben wenige Babys bei den Eltern geschlafen."
+          },
+          {
+            "id": "B",
+            "text": "hatten reiche Menschen Kinderzimmer."
+          },
+          {
+            "id": "C",
+            "text": "war es für die Kinder bei den Eltern sicherer."
+          }
+        ],
+        "question": "Vor ungefähr einhundert Jahren",
+        "correctAnswer": "B"
+      },
+      "xpReward": 20,
+      "maxPoints": 25,
+      "questions": [
+        {
+          "id": 6,
+          "options": [
+            {
+              "id": "A",
+              "text": "beantworten Experten unterschiedlich."
+            },
+            {
+              "id": "B",
+              "text": "ist für jedes Kind anders zu beantworten."
+            },
+            {
+              "id": "C",
+              "text": "muss in einer Beratung besprochen werden."
+            }
+          ],
+          "question": "Die Frage, ab wann Kinder im eigenen Bett schlafen sollten,",
+          "correctAnswer": "A"
+        },
+        {
+          "id": 7,
+          "options": [
+            {
+              "id": "A",
+              "text": "intensiven Kontakt zu den Eltern."
+            },
+            {
+              "id": "B",
+              "text": "Kontakt zu möglichst vielen Personen."
+            },
+            {
+              "id": "C",
+              "text": "mehrere Treffen mit Familienberatern."
+            }
+          ],
+          "question": "Babys brauchen in den ersten Monaten",
+          "correctAnswer": "A"
+        },
+        {
+          "id": 8,
+          "options": [
+            {
+              "id": "A",
+              "text": "brauchen sie länger Muttermilch."
+            },
+            {
+              "id": "B",
+              "text": "kann das negativ für ihre Persönlichkeit sein."
+            },
+            {
+              "id": "C",
+              "text": "können sie öfter krank werden."
+            }
+          ],
+          "question": "Wenn Neugeborene allein im Bett schlafen,",
+          "correctAnswer": "B"
+        },
+        {
+          "id": 9,
+          "options": [
+            {
+              "id": "A",
+              "text": "dann seltener Fieber bekommen."
+            },
+            {
+              "id": "B",
+              "text": "dort länger schlafen."
+            },
+            {
+              "id": "C",
+              "text": "dort ruhiger schlafen."
+            }
+          ],
+          "question": "Ein Kinderbett im Zimmer der Erwachsenen ist gut, weil Babys",
+          "correctAnswer": "C"
+        },
+        {
+          "id": 10,
+          "options": [
+            {
+              "id": "A",
+              "text": "nach ihrem 3. Geburtstag ein eigenes Bett haben."
+            },
+            {
+              "id": "B",
+              "text": "schon im Babyalter im eigenen Zimmer schlafen."
+            },
+            {
+              "id": "C",
+              "text": "selbst entscheiden, wo sie schlafen wollen."
+            }
+          ],
+          "question": "Kinder sollten",
+          "correctAnswer": "A"
+        }
+      ],
+      "timeLimit": 2100,
+      "readingText": {
+        "title": "Babys im Elternbett",
+        "source": "aus einer österreichischen Tageszeitung",
+        "content": "Babys schliefen seit Urzeiten bei ihren Eltern, weil es sicherer und praktischer war. Erst vor ungefähr 100 Jahren bekamen Kinder reicher Leute ein eigenes Bett oder Zimmer. Die meisten Menschen konnten sich das aber lange nicht leisten.\n\nAb wann soll das Kind nun heraus aus dem Elternbett und Schlafzimmer? Über den richtigen Zeitpunkt gehen die Meinungen der Experten auseinander. Die einen sagen Entwicklungsschäden voraus, sollte das Baby nach sechs Monaten noch immer im Elternbett schlafen. Die anderen sehen ähnliche Folgen – allerdings, weil das Kind zu kurze Zeit im Elternbett schlafen durfte.\n\n„Die Eltern können sich nicht entscheiden, weil es so viel Unwissen gibt\", sagt die Psychotherapeutin und Familienberaterin Martina Leibovici-Mühlberger. Eines ist allerdings sicher: Für ein Neugeborenes ist die Nähe zu seinen Bezugspersonen, im Allgemeinen Mutter und Vater, lebenswichtig. Aber nicht nur das. Säuglinge brauchen neben räumlicher Nähe zu Eltern oder Geschwistern auch den direkten Körperkontakt mit der Mutter oder dem Vater.\n\n„Für so ein kleines Kind bedeutet das Liegen in einem eigenen Bett eine unglaubliche Verlorenheit. Das könnte zu Problemen in der psychischen Entwicklung führen\", betont Leibovici-Mühlberger. Die Sechs-Monate-Grenze steht für sie im Zusammenhang mit der WHO-Empfehlung, dass Babys mindestens sechs Monate Muttermilch trinken sollten. In dieser Zeit ist es sicherlich das Natürlichste und Einfachste, das Kind bei sich im Bett zu haben.\n\nDie deutsche Akademie für Kinderheilkunde und Jugendmedizin warnt allerdings vor einer Überwärmung des Babys im gemeinsamen Bett. Ein Kinderbett im Elternschlafzimmer habe dafür den Vorteil, dass die Atemgeräusche der Eltern das Kind beruhigen. Auch beruhigend für das Kind ist, wenn es die Bewegungen der Eltern im Zimmer hört.\n\nEin eigenes Zimmer wird übrigens frühestens nach dem zweiten Lebensjahr aktuell. Mit drei bis vier Jahren sollte der Nachwuchs allerdings für immer aus dem elterlichen Bett ausziehen. „Dann hat das Kind schon ein eigenes soziales Leben. Da wird das eigene Bett zum Symbol für größere Selbstständigkeit\", sagt Leibovici-Mühlberger.",
+        "footnote": "WHO: Weltgesundheitsorganisation",
+        "subtitle": "Neugeborene brauchen Nähe, ab dem dritten Lebensjahr ist Selbstständigkeit wichtig"
+      },
+      "instructions": {
+        "DE": "Lesen Sie zuerst den Zeitungsartikel und lösen Sie dann die fünf Aufgaben, indem Sie die richtige Antwort (A, B oder C) ankreuzen. Für jede Aufgabe gibt es nur eine richtige Lösung.",
+        "FR": "Lisez d'abord l'article de journal, puis résolvez les cinq tâches en cochant la bonne réponse (A, B ou C). Il n'y a qu'une seule bonne réponse par tâche."
+      },
+      "scoringRules": {
+        "table": [
+          {
+            "points": 25,
+            "correct": 5
+          },
+          {
+            "points": 20,
+            "correct": 4
+          },
+          {
+            "points": 15,
+            "correct": 3
+          },
+          {
+            "points": 10,
+            "correct": 2
+          },
+          {
+            "points": 5,
+            "correct": 1
+          },
+          {
+            "points": 0,
+            "correct": 0
+          }
+        ],
+        "maxTotal": 25,
+        "perCorrectAnswer": 5
+      },
+      "difficultyScore": 0.7
+    }
+  ],
+  "SITUATION_AD_MATCHING": [
+    {
+      "id": "aufgabe3_lesen",
+      "ads": [
+        {
+          "id": "A",
+          "title": "Privatkindergarten BAMBI",
+          "content": "Noch 3 freie Plätze im Privatkindergarten BAMBI. Pädagogisches Top-Team. Helle, kindergerechte Räume. Eigene Spielwiese. Ganzjährig und ganztägig geöffnet. Wir freuen uns auf Ihren Liebling! 9073 Viktring, 10. Oktober Straße 12"
+        },
+        {
+          "id": "B",
+          "title": "23-jährige Studentin der Wirtschaftsuni Wien",
+          "content": "23-jährige Studentin der Wirtschaftsuni Wien, zeitlich flexibel und im Umgang mit Kindern und Jugendlichen erfahren, bietet Hilfe in den Fächern Mathematik | BWL | Rechnungswesen. 10 Euro/Stunde! Ich freue mich auf Ihren Anruf. Lisa, Tel: 0650-1780 6615"
+        },
+        {
+          "id": "C",
+          "title": "Mehrsprachige Kindergartenpädagogin gesucht",
+          "content": "Mehrsprachige Kindergartenpädagogin gesucht. Möchten Sie Kinder in ihrer Entwicklung begleiten und fördern? Möchten Sie Ihre Stärken und Interessen einbringen? Dann sind Sie bei uns richtig! Ihre aussagekräftige Bewerbung, inkl. Zeugnisse und Lebenslauf, schicken Sie bitte per E-Mail (bewerbung@kathkids.at) an die St. Nikolaus-Kindertagesheimstiftung"
+        },
+        {
+          "id": "D",
+          "title": "Mitarbeiter/-innen am Empfang – Platter Hotels",
+          "content": "Bei uns wird Erfolg belohnt! Wir suchen für unsere sechs Häuser im gehobenen ****Bereich in Wien, Salzburg und Innsbruck Mitarbeiter/-innen am Empfang. Wenn Sie bereits Rezeptionserfahrung haben, gerne telefonieren, mind. eine Fremdsprache (Russisch, Englisch) sprechen und EDV-erfahren sind, senden Sie bitte Ihre Bewerbung an: Platter Hotels, Zentralbüro Geschäftsbereich Personal, Adamgasse 10, 6020 Innsbruck"
+        },
+        {
+          "id": "E",
+          "title": "Tankstelle – Aushilfskräfte",
+          "content": "Tankstelle. 24-Stunden Service sucht für Waschanlage und Shop AUSHILFSKRÄFTE. Für unsere Standorte im 11. und 23. Bezirk stundenweise, vorwiegend abends ab 18 Uhr. Bitte melden Sie sich bei Fr. Schneider. Tel: 0681 17 98 05 78"
+        },
+        {
+          "id": "F",
+          "title": "Höhere Technische Bundeslehranstalt Hollabrunn",
+          "content": "Höhere Technische Bundeslehranstalt Hollabrunn – nicht nur für Jungs! Überzeugen Sie sich selbst am Tag der offenen Tür. Freitag, 15. Mai von 9–17 Uhr. Wir präsentieren: 1. neue Ausbildungszweige, 2. zusätzliche Fremdsprachenangebote, 3. spannende Projekte der Maturaklassen. Auf Ihr Kommen freut sich Dir. DI Walter Auernig"
+        },
+        {
+          "id": "G",
+          "title": "Schülerhilfe",
+          "content": "Schülerhilfe. Probleme in der Schule? Schlechte Noten? Dann kommen Sie mit Ihrem Kind zur Nachhilfe in unser Lernzentrum. Unser pädagogisches Personal hilft und berät Sie gerne. Montag bis Freitag von 13.00 bis 17.30 Uhr. Thaliastraße 125b • 1160 Wien • U3 Ottakring. Tel. +43"
+        }
+      ],
+      "type": "SITUATION_AD_MATCHING",
+      "level": "B1",
+      "skill": "LESEN",
+      "sector": "QUOTIDIEN",
+      "examples": [
+        {
+          "answer": "C",
+          "situation": "Ihre Tochter hat eine Ausbildung als Kindergartenpädagogin abgeschlossen und sucht eine Arbeitsstelle."
+        },
+        {
+          "answer": "0",
+          "situation": "Ihre Waschmaschine ist kaputt. Sie suchen eine Reparaturwerkstatt."
+        }
+      ],
+      "xpReward": 20,
+      "maxPoints": 25,
+      "timeLimit": 900,
+      "situations": [
+        {
+          "id": 11,
+          "text": "Sie sind gerade umgezogen und suchen noch einige günstige Möbel, besonders für das Wohnzimmer.",
+          "correctAnswer": "I"
+        },
+        {
+          "id": 12,
+          "text": "Sie suchen eine neue Arbeit, bei der Sie mit Menschen direkt und auch am Telefon in Kontakt kommen.",
+          "correctAnswer": "D"
+        },
+        {
+          "id": 13,
+          "text": "Ihre Tochter interessiert sich sehr für technische Dinge. Sie suchen eine passende Schule.",
+          "correctAnswer": "F"
+        },
+        {
+          "id": 14,
+          "text": "Sie haben einen neuen Job gefunden und suchen für Ihr Kind eine Kinderbetreuung.",
+          "correctAnswer": "A"
+        },
+        {
+          "id": 15,
+          "text": "Ihr Sohn besucht die Handelsakademie (HAK) und möchte zu Hause Nachhilfe in wirtschaftlichen Fächern bekommen.",
+          "correctAnswer": "B"
+        },
+        {
+          "id": 16,
+          "text": "Ihre Kinder bekommen eigene Zimmer mit neuen Möbeln. Sie wollen daher einige gebrauchte Kindermöbel verkaufen und suchen einen Käufer.",
+          "correctAnswer": "0"
+        },
+        {
+          "id": 17,
+          "text": "Ihre Freundin liebt Schmuck und möchte gern beruflich damit zu tun haben.",
+          "correctAnswer": "L"
+        },
+        {
+          "id": 18,
+          "text": "Sie möchten Ihr Auto für den Winter vorbereiten und suchen Angebote.",
+          "correctAnswer": "H"
+        },
+        {
+          "id": 19,
+          "text": "Ihre Nachbarn haben eine Werkstatt und suchen technische Geräte und Werkzeuge.",
+          "correctAnswer": "M"
+        },
+        {
+          "id": 20,
+          "text": "Sie möchten neben dem Studium etwas dazuverdienen und suchen für den Abend einen Nebenjob.",
+          "correctAnswer": "E"
+        }
+      ],
+      "instructions": {
+        "DE": "Lesen Sie die folgenden Situationen (11–20) sowie die 12 Anzeigen (A–M). Welche Anzeige passt zu welcher Situation? Achtung: Pro Situation gibt es nur eine passende Anzeige, es ist aber auch möglich, dass es keine passende Anzeige gibt. In diesem Fall schreiben Sie 0.",
+        "FR": "Lisez les situations (11–20) et les 12 annonces (A–M). Quelle annonce correspond à quelle situation? Attention: il n'y a qu'une seule annonce par situation, mais il est aussi possible qu'aucune annonce ne corresponde. Dans ce cas, écrivez 0."
+      },
+      "difficultyScore": 0.7
+    },
+    {
+      "ads": [
+        {
+          "id": "A",
+          "title": "Privatkindergarten BAMBI",
+          "content": "Noch 3 freie Plätze im Privatkindergarten BAMBI. Pädagogisches Top-Team, Helle kindergerechte Räume, Eigene Spielwiese, Ganzjährig und ganztägig geöffnet. Wir freuen uns auf Ihren Liebling! 9073 Viktring, 10. Oktober Straße 12",
+          "category": "Kinderbetreuung"
+        },
+        {
+          "id": "B",
+          "title": "Studentin bietet Nachhilfe",
+          "content": "23-jährige Studentin der Wirtschaftsuni Wien, zeitlich flexibel und im Umgang mit Kindern und Jugendlichen erfahren, bietet Hilfe in den Fächern Mathematik | BWL | Rechnungswesen. 10 Euro/Stunde! Ich freue mich auf Ihren Anruf. Lisa, Tel: 0650-1780 6615",
+          "category": "Nachhilfe"
+        },
+        {
+          "id": "C",
+          "title": "Mehrsprachige Kindergartenpädagogin gesucht",
+          "content": "Möchten Sie Kinder in ihrer Entwicklung begleiten und fördern? Möchten Sie Ihre Stärken und Interessen einbringen? Dann sind Sie bei uns richtig! Ihre aussagekräftige Bewerbung, inkl. Zeugnisse und Lebenslauf, schicken Sie bitte per E-Mail (bewerbung@kathkids.at) an die St. Nikolaus-Kindertagesheimstiftung.",
+          "category": "Stellenangebot Pädagogik"
+        },
+        {
+          "id": "D",
+          "title": "Mitarbeiter/-innen am Empfang gesucht – Platter Hotels",
+          "content": "Bei uns wird Erfolg belohnt! Wir suchen für unsere sechs Häuser im gehobenen ****Bereich in Wien, Salzburg und Innsbruck Mitarbeiter/-innen am Empfang. Wenn Sie bereits Rezeptionserfahrung haben, gerne telefonieren, mind. eine Fremdsprache (Russisch, Englisch) sprechen und EDV-erfahren sind, senden Sie bitte Ihre Bewerbung an: Platter Hotels, Zentralbüro Geschäftsbereich Personal, Adamgasse 10, 6020 Innsbruck",
+          "category": "Stellenangebot Empfang"
+        },
+        {
+          "id": "E",
+          "title": "Tankstelle – Aushilfskräfte",
+          "content": "Tankstelle 24-Stunden Service sucht für Waschanlage und Shop AUSHILFSKRÄFTE. Für unsere Standorte im 11. und 23. Bezirk stundenweise, vorwiegend abends ab 18 Uhr. Bitte melden Sie sich bei Fr. Schneider, Tel: 0681 17 98 05 78",
+          "category": "Nebenjob"
+        },
+        {
+          "id": "F",
+          "title": "Höhere Technische Bundeslehranstalt Hollabrunn",
+          "content": "Höhere Technische Bundeslehranstalt Hollabrunn – nicht nur für Jungs! Überzeugen Sie sich selbst am Tag der offenen Tür. Freitag, 15. Mai von 9–17 Uhr. Wir präsentieren: 1. neue Ausbildungszweige, 2. zusätzliche Fremdsprachenangebote, 3. spannende Projekte der Maturaklassen. Auf Ihr Kommen freut sich Dir. DI Walter Auernig.",
+          "category": "Schule / Ausbildung"
+        },
+        {
+          "id": "G",
+          "title": "Schülerhilfe",
+          "content": "Probleme in der Schule? Schlechte Noten? Dann kommen Sie mit Ihrem Kind zur Nachhilfe in unser Lernzentrum. Unser pädagogisches Personal hilft und berät Sie gerne. Montag bis Freitag von 13.00 bis 17.30 Uhr. Thaliastraße 125b • 1160 Wien • U3 Ottakring. Tel. +43 (0) 1 49 49 249",
+          "category": "Nachhilfe Lernzentrum"
+        },
+        {
+          "id": "H",
+          "title": "Sonderangebote Tankstellenshop – Winterausrüstung",
+          "content": "SONDERANGEBOTE IN UNSEREM TANKSTELLENSHOP. 5 Liter Frostschutzmittel 14,90 €. Schneeketten 59,00 €. Machen Sie Ihr Fahrzeug für die kalte Jah"
+        }
+      ],
+      "type": "SITUATION_AD_MATCHING",
+      "level": "B1",
+      "skill": "LESEN",
+      "sector": "QUOTIDIEN",
+      "examples": [
+        {
+          "id": "Bsp.1",
+          "situation": "Ihre Tochter hat eine Ausbildung als Kindergartenpädagogin abgeschlossen und sucht eine Arbeitsstelle.",
+          "correctAnswer": "C"
+        },
+        {
+          "id": "Bsp.2",
+          "situation": "Ihre Waschmaschine ist kaputt. Sie suchen eine Reparaturwerkstatt.",
+          "correctAnswer": "0"
+        }
+      ],
+      "xpReward": 20,
+      "maxPoints": 25,
+      "timeLimit": 900,
+      "situations": [
+        {
+          "id": 11,
+          "text": "Sie sind gerade umgezogen und suchen noch einige günstige Möbel, besonders für das Wohnzimmer."
+        },
+        {
+          "id": 12,
+          "text": "Sie suchen eine neue Arbeit, bei der Sie mit Menschen direkt und auch am Telefon in Kontakt kommen."
+        },
+        {
+          "id": 13,
+          "text": "Ihre Tochter interessiert sich sehr für technische Dinge. Sie suchen eine passende Schule."
+        },
+        {
+          "id": 14,
+          "text": "Sie haben einen neuen Job gefunden und suchen für Ihr Kind eine Kinderbetreuung."
+        },
+        {
+          "id": 15,
+          "text": "Ihr Sohn besucht die Handelsakademie (HAK) und möchte zu Hause Nachhilfe in wirtschaftlichen Fächern bekommen."
+        },
+        {
+          "id": 16,
+          "text": "Ihre Kinder bekommen eigene Zimmer mit neuen Möbeln. Sie wollen daher einige gebrauchte Kindermöbel verkaufen und suchen einen Käufer."
+        },
+        {
+          "id": 17,
+          "text": "Ihre Freundin liebt Schmuck und möchte gern beruflich damit zu tun haben."
+        },
+        {
+          "id": 18,
+          "text": "Sie möchten Ihr Auto für den Winter vorbereiten und suchen Angebote."
+        },
+        {
+          "id": 19,
+          "text": "Ihre Nachbarn haben eine Werkstatt und suchen technische Geräte und Werkzeuge."
+        },
+        {
+          "id": 20,
+          "text": "Sie möchten neben dem Studium etwas dazuverdienen und suchen für den Abend einen Nebenjob."
+        }
+      ],
+      "instructions": {
+        "DE": "Lesen Sie die folgenden Situationen (11–20) sowie die 12 Anzeigen (A–M). Welche Anzeige passt zu welcher Situation? Pro Situation gibt es nur eine passende Anzeige. Es ist auch möglich, dass keine Anzeige passt – dann schreiben Sie 0.",
+        "FR": "Lisez les situations (11–20) et les 12 annonces (A–M). Quelle annonce correspond à quelle situation? Il n'y a qu'une seule annonce correcte par situation. Si aucune annonce ne correspond, écrivez 0."
+      },
+      "difficultyScore": 0.7
+    }
+  ],
+  "LESEN_ZUORDNUNG": [
+    {
+      "titre": "Lesen & Sprachbausteine – Aufgabe 1",
+      "textes": [
+        {
+          "id": 1,
+          "contenu": "Eine aktuelle Studie zeigt, dass immer mehr Österreicherinnen und Österreicher lieber selbst kochen, statt ins Restaurant zu gehen oder Fertiggerichte zu kaufen. Als Hauptgründe nennen die Befragten gesündere Ernährung und die Möglichkeit, Geld zu sparen. Besonders junge Erwachsene zwischen 20 und 35 Jahren greifen häufiger zum Kochlöffel. Kochvideos im Internet spielen dabei eine wichtige Rolle.",
+          "bonne_reponse": "G"
+        },
+        {
+          "id": 2,
+          "contenu": "Die Stadt Wien hat bekannt gegeben, dass ab nächsten Monat in drei zentralen Bezirken neue Sammelstellen für Glas, Papier und Kunststoff aufgestellt werden. Bürgerinnen und Bürger können dort rund um die Uhr ihren Abfall trennen. Die Initiative ist Teil eines größeren Programms zur Förderung der Kreislaufwirtschaft. Die Kosten trägt die Gemeinde Wien.",
+          "bonne_reponse": "K"
+        },
+        {
+          "id": 3,
+          "contenu": "Der Naschmarkt in Wien feiert in diesem Jahr sein 100-jähriges Bestehen. Aus diesem Anlass organisieren die Händlerinnen und Händler ein dreitägiges Fest mit Musik, Spezialitäten aus aller Welt und Sonderangeboten. Der Bürgermeister lobte den Markt als „Herz der Stadt\" und als Symbol für kulturelle Vielfalt. Der Eintritt ist frei.",
+          "bonne_reponse": "I"
+        },
+        {
+          "id": 4,
+          "contenu": "Viele Haushalte in Österreich haben in den letzten Monaten höhere Stromrechnungen erhalten. Experten erklären, dass die Preise im Vergleich zum Vorjahr um bis zu 30 Prozent gestiegen sind. Besonders betroffene Familien können beim Sozialamt einen Zuschuss beantragen. Die Regierung arbeitet derzeit an einem Hilfspaket für einkommensschwache Haushalte.",
+          "bonne_reponse": "E"
+        },
+        {
+          "id": 5,
+          "contenu": "Ein neuer Supermarkt in Graz hat diese Woche eine komplett automatisierte Kassenzone eröffnet. Kundinnen und Kunden scannen ihre Einkäufe selbst und bezahlen mit Karte oder Smartphone. Das Personal steht bei Fragen zur Verfügung, ist aber nicht mehr an der Kasse tätig. Die Reaktionen der Kundschaft sind gemischt: Viele schätzen die Schnelligkeit, andere vermissen den persönlichen Kontakt.",
+          "bonne_reponse": "F"
+        }
+      ],
+      "consigne": "Lesen Sie die 10 Überschriften und die 5 Texte. Suchen Sie zu jedem Text (1–5) die passende Überschrift (A–K) und schreiben Sie den Buchstaben auf die Linie über dem Text. Pro Text gibt es nur eine richtige Lösung.",
+      "competence": "Lesen - Aufgabe 1",
+      "uberschriften": [
+        {
+          "id": "A",
+          "text": "Gesundes Frühstück spart Zeit und Geld"
+        },
+        {
+          "id": "B",
+          "text": "Neue App hilft beim täglichen Einkauf"
+        },
+        {
+          "id": "C",
+          "text": "Weniger Plastikmüll in österreichischen Haushalten"
+        },
+        {
+          "id": "D",
+          "text": "Öffentliche Verkehrsmittel immer beliebter"
+        },
+        {
+          "id": "E",
+          "text": "Hohe Strompreise belasten Familien"
+        },
+        {
+          "id": "F",
+          "text": "Supermarkt führt Self-Checkout ein"
+        },
+        {
+          "id": "G",
+          "text": "Immer mehr Menschen kochen zu Hause"
+        },
+        {
+          "id": "H",
+          "text": "Schlafmangel ein wachsendes Problem"
+        },
+        {
+          "id": "I",
+          "text": "Wiener Markt feiert sein 100-jähriges Jubiläum"
+        },
+        {
+          "id": "K",
+          "text": "Neue Recycling-Station im Stadtzentrum eröffnet"
+        }
+      ]
+    },
+    {
+      "titre": "Lesen & Sprachbausteine – Aufgabe 2",
+      "article": {
+        "titre": "Der Alltag ohne Bargeld – Fluch oder Segen?",
+        "contenu": "Ob im Supermarkt, in der Bäckerei oder im Café – das kontaktlose Bezahlen mit Karte oder Smartphone ist in Österreich längst Alltag geworden. Eine aktuelle Umfrage des Instituts für Konsumforschung zeigt, dass bereits 68 Prozent der Österreicherinnen und Österreicher mindestens einmal pro Woche bargeldlos zahlen. Bei den unter 30-Jährigen liegt dieser Anteil sogar bei 85 Prozent.\n\nDoch die vollständige Abschaffung des Bargelds stößt auf Widerstand. \"Ich brauche das Gefühl, echtes Geld in der Hand zu halten. Nur dann weiß ich wirklich, wie viel ich ausgebe\", sagt Maria Hofer, 58, aus Linz. Diese Ansicht teilen laut der Studie rund 40 Prozent der Befragten über 50 Jahre.\n\nFinanzexpertin Dr. Sabine Krenn erklärt, dass bargeldloses Zahlen durchaus Vorteile hat: \"Man verliert nie den Überblick über seine Ausgaben, weil alles automatisch auf dem Kontoauszug erscheint.\" Gleichzeitig warnt sie vor den Risiken: Datenschutz und Cyberkriminalität seien ernste Themen, die nicht unterschätzt werden sollten.\n\nFür Menschen in ländlichen Regionen bleibt Bargeld besonders wichtig. Nicht alle Geschäfte auf dem Land akzeptieren Kartenzahlung, und ältere Bewohnerinnen und Bewohner haben oft keinen einfachen Zugang zu digitalen Geräten. Die österreichische Nationalbank betont daher, dass Bargeld als Zahlungsmittel erhalten bleiben soll – zumindest mittelfristig.\n\nEine Studie der Europäischen Zentralbank belegt außerdem, dass Menschen mit Karte im Durchschnitt mehr ausgeben als beim Bezahlen mit Bargeld. Das liegt daran, dass der \"Schmerz des Bezahlens\" beim digitalen Zahlen geringer ist. Für das persönliche Budget kann das langfristig problematisch sein.\n\nFazit: Ob mit oder ohne Bargeld – jede Zahlungsform hat ihre Berechtigung. Wichtig ist, dass Verbraucherinnen und Verbraucher selbst entscheiden dürfen, wie sie bezahlen möchten.",
+        "sous_titre": "Immer mehr Österreicher zahlen mit Karte oder Handy – doch nicht alle sind begeistert"
+      },
+      "consigne": "Lesen Sie zuerst den Zeitungsartikel und lösen Sie dann die fünf Aufgaben, indem Sie die richtige Antwort (A, B oder C) ankreuzen. Für jede Aufgabe gibt es nur eine richtige Lösung.",
+      "questions": [
+        {
+          "id": 6,
+          "options": {
+            "A": "vor allem ältere Menschen über 50 Jahre.",
+            "B": "besonders häufig junge Menschen unter 30 Jahren.",
+            "C": "nur Menschen in Großstädten."
+          },
+          "question": "Laut der Umfrage zahlen bargeldlos ...",
+          "bonne_reponse": "B"
+        },
+        {
+          "id": 7,
+          "options": {
+            "A": "kein Bankkonto besitzt.",
+            "B": "Angst vor Cyberkriminalität hat.",
+            "C": "so besser den Überblick über ihr Geld behält."
+          },
+          "question": "Maria Hofer bevorzugt Bargeld, weil sie ...",
+          "bonne_reponse": "C"
+        },
+        {
+          "id": 8,
+          "options": {
+            "A": "keine Risiken hat.",
+            "B": "sowohl Vorteile als auch Risiken hat.",
+            "C": "für ältere Menschen besonders geeignet ist."
+          },
+          "question": "Dr. Sabine Krenn sagt, dass bargeldloses Zahlen ...",
+          "bonne_reponse": "B"
+        },
+        {
+          "id": 9,
+          "options": {
+            "A": "dort mehr Geld ausgegeben wird.",
+            "B": "nicht alle Geschäfte Kartenzahlung akzeptieren.",
+            "C": "es dort keine Banken gibt."
+          },
+          "question": "In ländlichen Regionen ist Bargeld wichtig, weil ...",
+          "bonne_reponse": "B"
+        },
+        {
+          "id": 10,
+          "options": {
+            "A": "gibt laut einer Studie im Durchschnitt mehr Geld aus.",
+            "B": "spart mehr Geld als beim Barzahlen.",
+            "C": "hat mehr Kontrolle über sein Budget."
+          },
+          "question": "Wer mit Karte zahlt, ...",
+          "bonne_reponse": "A"
+        }
+      ],
+      "competence": "Lesen - Aufgabe 2"
+    },
+    {
+      "titre": "Lesen & Sprachbausteine – Aufgabe 3",
+      "anzeigen": [
+        {
+          "id": "A",
+          "titre": "HEIMWERKER-SERVICE HUBER",
+          "contenu": "Kleine Reparaturen in Wohnung und Haus – schnell, günstig und zuverlässig. Malerarbeiten, Montage, Sanitär. Tel: 0676 / 234 56 78. Montag bis Samstag erreichbar."
+        },
+        {
+          "id": "B",
+          "titre": "Wiener Linien – Monatskarte",
+          "contenu": "Fahren Sie günstig und umweltfreundlich! Die Monatskarte für alle Zonen gilt für U-Bahn, Bus und Straßenbahn. Jetzt online kaufen: wienerlinien.at"
+        },
+        {
+          "id": "C",
+          "titre": "Nachhilfezentrum LERNFIT",
+          "contenu": "Ihr Kind hat Schwierigkeiten in der Schule? Wir helfen! Einzelunterricht in allen Fächern. Montag–Freitag 14–19 Uhr. Erste Stunde gratis! Mariahilfer Straße 44, 1060 Wien."
+        },
+        {
+          "id": "D",
+          "titre": "VHS – GESUND KOCHEN",
+          "contenu": "Kochkurs für Berufstätige: Schnell, lecker und gesund kochen. Jeden Dienstag von 18:30 bis 20:30 Uhr. Anmeldung unter: kurse@vhs-wien.at"
+        },
+        {
+          "id": "E",
+          "titre": "ENERGIE-BERATUNG WIEN",
+          "contenu": "Sie haben Fragen zu Ihrer Strom- oder Gasrechnung? Unsere Expertinnen und Experten beraten Sie kostenlos. Mo–Fr 9–17 Uhr. Tel: 01 / 400 00. energieberatung.wien.at"
+        },
+        {
+          "id": "F",
+          "titre": "BIO-BAUERNMARKT FLORIDSDORF",
+          "contenu": "Jeden Samstag von 8 bis 13 Uhr. Frisches Gemüse, Obst, Käse und Brot direkt vom Erzeuger. Floridsdorfer Marktplatz, 1210 Wien. Eintritt frei!"
+        },
+        {
+          "id": "G",
+          "titre": "EINKAUFSHILFE FÜR SENIOREN",
+          "contenu": "Wir helfen älteren und mobilitätseingeschränkten Menschen beim täglichen Einkauf. Ehrenamtlicher Service des Roten Kreuzes Wien. Anmeldung: 01 / 789 56 00."
+        },
+        {
+          "id": "H",
+          "titre": "STELLENANGEBOT – VERKÄUFER/IN",
+          "contenu": "Bäckerei Sonnenschein sucht freundliche Verkäuferin / freundlichen Verkäufer für unsere Filiale in Favoriten. Vollzeit, Mo–Sa. Bewerbung an: jobs@baeckerei-sonnenschein.at"
+        },
+        {
+          "id": "I",
+          "titre": "REINIGUNGSFIRMA BLITZ-SAUBER",
+          "contenu": "Wir suchen zuverlässige Reinigungskräfte für Büros und Privatwohnungen. Auch Wochenendeinsätze möglich. Sofortiger Beginn. Tel: 0650 / 987 65 43."
+        },
+        {
+          "id": "K",
+          "titre": "FAHRRAD-WERKSTATT PEDALIX",
+          "contenu": "Ihr Fahrrad braucht eine Reparatur? Wir reparieren schnell und günstig! Reifen, Bremsen, Schaltung. Öffnungszeiten: Di–Sa 10–18 Uhr. Schönbrunner Str. 12."
+        },
+        {
+          "id": "L",
+          "titre": "MITTAGSTISCH-SERVICE GENUSS TÄGLICH",
+          "contenu": "Warmes Mittagessen direkt zu Ihnen nach Hause – frisch gekocht, täglich außer Sonntag. Ab 6,50 € pro Mahlzeit inkl. Lieferung. Bestellung bis 10 Uhr: 01 / 333 22 11."
+        },
+        {
+          "id": "M",
+          "titre": "BUCHFLOHMARKT WIEN-MITTE",
+          "contenu": "Bücher, Magazine, Comics kaufen und verkaufen! Jeden ersten Sonntag im Monat, 10–17 Uhr. Standmiete: 15 € pro Tisch. Anmeldung: flohmarkt@wien-liest.at"
+        }
+      ],
+      "consigne": "Lesen Sie die folgenden Situationen (11–20) sowie die 12 Anzeigen (A–M). Welche Anzeige passt zu welcher Situation? Tragen Sie die Lösungen in die Kästchen ein. Pro Situation gibt es nur eine passende Anzeige. Es ist auch möglich, dass es keine passende Anzeige gibt – schreiben Sie dann 0.",
+      "competence": "Lesen - Aufgabe 3",
+      "situations": [
+        {
+          "id": 11,
+          "texte": "Sie suchen einen Kurs, um gesünder kochen zu lernen, am liebsten abends nach der Arbeit.",
+          "bonne_reponse": "D"
+        },
+        {
+          "id": 12,
+          "texte": "Ihre Nachbarin ist alt und kann nicht mehr gut sehen. Sie braucht jemanden, der ihr beim Einkaufen hilft.",
+          "bonne_reponse": "G"
+        },
+        {
+          "id": 13,
+          "texte": "Sie möchten Ihren alten Kühlschrank loswerden und suchen einen kostenlosen Abholservice.",
+          "bonne_reponse": "0"
+        },
+        {
+          "id": 14,
+          "texte": "Sie suchen eine günstige Monatskarte für den öffentlichen Verkehr in Wien.",
+          "bonne_reponse": "B"
+        },
+        {
+          "id": 15,
+          "texte": "Sie möchten am Wochenende frische Bio-Produkte direkt vom Bauern kaufen.",
+          "bonne_reponse": "F"
+        },
+        {
+          "id": 16,
+          "texte": "Ihre Tochter sucht eine Arbeitsstelle als Reinigungskraft, auch samstags.",
+          "bonne_reponse": "I"
+        },
+        {
+          "id": 17,
+          "texte": "Sie suchen einen Handwerker, der in Ihrer Wohnung kleine Reparaturen durchführt.",
+          "bonne_reponse": "A"
+        },
+        {
+          "id": 18,
+          "texte": "Sie möchten Ihre alten Bücher und Zeitschriften verkaufen.",
+          "bonne_reponse": "M"
+        },
+        {
+          "id": 19,
+          "texte": "Sie suchen eine Beratungsstelle für Fragen rund um Ihre Stromrechnung.",
+          "bonne_reponse": "E"
+        },
+        {
+          "id": 20,
+          "texte": "Sie brauchen jemanden, der Ihnen täglich das Mittagessen nach Hause liefert.",
+          "bonne_reponse": "L"
+        }
+      ]
+    },
+    {
+      "titre": "Sprachbausteine – Aufgabe 1 & 2",
+      "aufgabe_1": {
+        "type": "E-Mail – Alltagsplanung",
+        "consigne": "Lesen Sie den folgenden Text und kreuzen Sie für jede Lücke (21–30) das richtige Wort (A, B oder C) an.",
+        "texte_avec_lacunes": "Liebe Sandra,\n\nich [0] mich sehr gefreut, deine Nachricht zu lesen! Wie du schon weißt, bin ich letzte Woche in eine neue Wohnung [21]. Alles ist noch ein bisschen unordentlich, aber ich fühle [22] schon sehr wohl hier.\n\nIch wollte dich fragen, ob du Lust [23], am nächsten Samstag vorbeizukommen. Wir [24] zusammen frühstücken und dann auf den Markt gehen – dort gibt es immer frisches Gemüse und leckeres Brot. Ich kaufe [25] gerne selbst ein, statt in den Supermarkt zu gehen.\n\nFalls es dir recht ist, könnten wir [26] auch gemeinsam kochen. Ich habe neulich ein tolles Rezept [27]. Es ist nicht schwierig, aber man braucht etwas Zeit. Hast du [28] Allergien? Das würde ich gerne wissen, bevor ich einkaufe.\n\nMelde dich doch bald, [29] wir alles gut planen können. Und bitte bring deine Jacke mit, [30] es am Abend oft kühler wird.\n\nLiebe Grüße\nA"
+      },
+      "competence": "Sprachbausteine"
+    }
+  ]
+}
