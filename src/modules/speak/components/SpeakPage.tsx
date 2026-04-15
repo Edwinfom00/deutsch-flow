@@ -7,6 +7,7 @@ import { sendMessage, evaluateConversation, generateMoreScenarios } from "../ser
 import type { Scenario, Message } from "../server/speak.actions";
 import type { getScenarios } from "../server/speak.actions";
 import { cn } from "@/lib/utils";
+import { useTTS, EL_VOICES } from "@/lib/tts";
 
 type SpeakData = Awaited<ReturnType<typeof getScenarios>>;
 
@@ -60,33 +61,7 @@ function useSTT(onResult: (t: string) => void) {
   return { isListening, isSupported, start, stop };
 }
 
-function getDeVoice(): Promise<SpeechSynthesisVoice | null> {
-  return new Promise((resolve) => {
-    const synth = window.speechSynthesis;
-    const voices = synth.getVoices();
-    if (voices.length > 0) {
-      resolve(voices.find((v) => v.lang.startsWith("de")) ?? null);
-      return;
-    }
-    const onVoicesChanged = () => {
-      synth.removeEventListener("voiceschanged", onVoicesChanged);
-      resolve(synth.getVoices().find((v) => v.lang.startsWith("de")) ?? null);
-    };
-    synth.addEventListener("voiceschanged", onVoicesChanged);
-    setTimeout(() => { synth.removeEventListener("voiceschanged", onVoicesChanged); resolve(null); }, 2000);
-  });
-}
-
-async function speakDE(text: string) {
-  if (!("speechSynthesis" in window)) return;
-  window.speechSynthesis.cancel();
-  const utt = new SpeechSynthesisUtterance(text);
-  utt.lang = "de-DE";
-  utt.rate = 0.88;
-  const deVoice = await getDeVoice();
-  if (deVoice) utt.voice = deVoice;
-  window.speechSynthesis.speak(utt);
-}
+// speakDE removed — replaced by useTTS hook (ElevenLabs) inside SpeakPage component
 
 type EvaluationResult = {
   score: number; fluency: string; grammar: string; vocabulary: string;
@@ -105,8 +80,10 @@ export function SpeakPage({ initialData }: { initialData: SpeakData }) {
   const [isPending, startTransition] = useTransition();
   const [isEvaluating, setIsEvaluating] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
-
   const [isGeneratingMore, setIsGeneratingMore] = useState(false);
+
+  // ElevenLabs TTS — consistent AI voice throughout the conversation
+  const tts = useTTS();
 
   const handleGenerateMore = () => {
     setIsGeneratingMore(true);
@@ -134,7 +111,7 @@ export function SpeakPage({ initialData }: { initialData: SpeakData }) {
     setSelected(scenario);
     setMessages([{ role: "ai", text: scenario.opener }]);
     setPhase("chat");
-    setTimeout(() => speakDE(scenario.opener), 300);
+    setTimeout(() => tts.play(scenario.opener, { voiceId: EL_VOICES.ai }), 300);
   };
 
   const handleSend = () => {
@@ -153,7 +130,7 @@ export function SpeakPage({ initialData }: { initialData: SpeakData }) {
       });
       const aiMsg: Message = { role: "ai", text: res.reply, feedback: res.feedback ?? undefined };
       setMessages((prev) => [...prev, aiMsg]);
-      speakDE(res.reply);
+      tts.play(res.reply, { voiceId: EL_VOICES.ai });
       if (res.isConversationEnd) {
         setTimeout(() => handleEnd([...newHistory, aiMsg]), 1500);
       }
@@ -276,7 +253,7 @@ export function SpeakPage({ initialData }: { initialData: SpeakData }) {
                   <div key={i} className="flex items-center gap-2">
                     <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
                     <p className="text-sm text-gray-700 font-medium">{p}</p>
-                    <button onClick={() => speakDE(p)} className="text-gray-300 hover:text-gray-600 transition-colors ml-auto shrink-0">
+                    <button onClick={() => tts.play(p, { voiceId: EL_VOICES.ai })} className="text-gray-300 hover:text-gray-600 transition-colors ml-auto shrink-0">
                       <Volume2 className="h-3.5 w-3.5" />
                     </button>
                   </div>
@@ -339,8 +316,10 @@ export function SpeakPage({ initialData }: { initialData: SpeakData }) {
                 )}>
                   {msg.text}
                   {msg.role === "ai" && (
-                    <button onClick={() => speakDE(msg.text)}
-                      className="ml-2 text-gray-300 hover:text-gray-500 transition-colors inline-flex items-center">
+                    <button
+                      onClick={() => tts.play(msg.text, { voiceId: EL_VOICES.ai })}
+                      disabled={tts.isLoading || tts.isPlaying}
+                      className="ml-2 text-gray-300 hover:text-gray-500 transition-colors inline-flex items-center disabled:opacity-40">
                       <Volume2 className="h-3 w-3" />
                     </button>
                   )}

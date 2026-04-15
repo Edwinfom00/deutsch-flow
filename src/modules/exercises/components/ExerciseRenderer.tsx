@@ -179,7 +179,7 @@ function renderExercise(
   if (type === "VOCAB_SEKTOR")
     return <FlashcardRenderer exercise={exercise as never} onAnswer={onAnswer} answered={answered} />;
 
-  if (["SPRECHEN_DIALOG","SPRECHEN_ROLEPLAY","SPRECHEN_VORSTELLEN","SPRECHEN_DISKUSSION","SPRECHEN_BESCHREIBUNG"].includes(type))
+  if (["SPRECHEN_DIALOG","SPRECHEN_ROLEPLAY","SPRECHEN_VORSTELLEN","SPRECHEN_BESCHREIBUNG","SPRECHEN_DISKUSSION"].includes(type))
     return <SprechenRenderer exercise={exercise as never} onAnswer={onAnswer} answered={answered} />;
 
   return (

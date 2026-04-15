@@ -255,6 +255,30 @@ Format JSON exact:
   ]
 }`,
 
+  SPRECHEN_DISKUSSION: `
+Génère un exercice DISKUSSION (débat / discussion d'opinion) style Goethe B2/C1.
+L'apprenant doit défendre une position, réagir et argumenter en allemand.
+Format JSON exact:
+{
+  "type": "SPRECHEN_DISKUSSION",
+  "instructions": "Participe à cette discussion. Exprime ton opinion et argumente en allemand.",
+  "scenario": "sujet de discussion concret lié au secteur ou à la vie quotidienne (en français)",
+  "aiRole": "Diskussionspartner (interlocuteur qui défend la position opposée)",
+  "userRole": "Teilnehmer der Diskussion",
+  "aiOpener": "phrase d'ouverture de l'IA qui prend une position claire (en allemand, max 2 phrases)",
+  "objectives": [
+    "Exprimer clairement ton opinion avec 'Ich bin der Meinung, dass...' ou 'Meiner Ansicht nach...'",
+    "Utiliser des connecteurs logiques (jedoch, allerdings, einerseits...andererseits)",
+    "Réagir à la position de l'interlocuteur (ich stimme zu / nicht zu)"
+  ],
+  "keyVocabulary": [
+    { "word": "meiner Meinung nach", "translation": "à mon avis" },
+    { "word": "ich stimme (nicht) zu", "translation": "je suis (pas) d'accord" },
+    { "word": "einerseits...andererseits", "translation": "d'un côté...de l'autre" },
+    { "word": "das Argument überzeugt mich (nicht)", "translation": "l'argument me (ne) convainc (pas)" }
+  ]
+}`,
+
   // ── VOCABULAIRE ────────────────────────────────────────────────────────────
   VOCAB_FLASHCARD: `
 Génère une CARTE MÉMOIRE de vocabulaire avec contexte sectoriel.
