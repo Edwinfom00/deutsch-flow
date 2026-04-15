@@ -1,6 +1,5 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import type { PageProps } from "next/types";
 import { getPublicProfile } from "@/modules/gamification/server/public-profile.actions";
 import { PublicProfilePage } from "@/modules/gamification/components/PublicProfilePage";
 
@@ -12,7 +11,9 @@ async function Content({ userId }: { userId: string }) {
 
 export default async function PublicProfileRoute({
   params,
-}: PageProps<"/league/[userId]">) {
+}: {
+  params: Promise<{ userId: string }>;
+}) {
   const { userId } = await params;
   return (
     <Suspense
