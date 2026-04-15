@@ -1,149 +1,115 @@
 import { inngest } from "../client";
 import { db } from "@/lib/db";
-import { documentImport, exercise, spacedRepetition } from "@/lib/db/schema";
-import { anthropic, AI_MODEL, SYSTEM_PROMPT_BASE } from "@/lib/ai/client";
+import { documentImport, importedExercise } from "@/lib/db/schema";
+import { anthropic, AI_MODEL } from "@/lib/ai/client";
 import { parseAIJson } from "@/lib/ai/parse";
+import { normalizeType, normalizeSkill } from "@/lib/ai/normalize";
 import { eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import type { CEFRLevel, Sector } from "@/types";
 
-const VALID_SKILLS = ["LESEN", "SCHREIBEN", "HOEREN", "SPRECHEN", "WORTSCHATZ", "GRAMMATIK"] as const;
-const VALID_TYPES = [
-  "LESEN_ZUORDNUNG","LESEN_MULTIPLE_CHOICE","LESEN_RICHTIG_FALSCH","LESEN_LUECKENTEXT","LESEN_REIHENFOLGE",
-  "SCHREIBEN_EMAIL","SCHREIBEN_NOTIZ","SCHREIBEN_MEINUNG","SCHREIBEN_BESCHREIBUNG","SCHREIBEN_ZUSAMMENFASSUNG",
-  "HOEREN_MULTIPLE_CHOICE","HOEREN_ZUORDNUNG","HOEREN_ERGAENZUNG","HOEREN_RICHTIG_FALSCH",
-  "SPRECHEN_VORSTELLEN","SPRECHEN_DIALOG","SPRECHEN_BESCHREIBUNG","SPRECHEN_DISKUSSION","SPRECHEN_ROLEPLAY",
-  "VOCAB_FLASHCARD","VOCAB_LUECKENTEXT","VOCAB_ZUORDNUNG","VOCAB_BILD","VOCAB_SEKTOR",
-  "GRAMMATIK_LUECKENTEXT","GRAMMATIK_ORDNEN","GRAMMATIK_TRANSFORMATION","GRAMMATIK_FEHLERKORREKTUR",
-] as const;
-
-function normalizeSkill(raw: string | undefined): typeof VALID_SKILLS[number] {
-  const upper = (raw ?? "").toUpperCase();
-  return (VALID_SKILLS as readonly string[]).includes(upper)
-    ? upper as typeof VALID_SKILLS[number]
-    : "WORTSCHATZ";
+// ─── Helper — message Claude avec PDF base64 ──────────────────────────────────
+function pdfMsg(base64: string, text: string) {
+  return {
+    role: "user" as const,
+    content: [
+      {
+        type: "document" as const,
+        source: { type: "base64" as const, media_type: "application/pdf" as const, data: base64 },
+      },
+      { type: "text" as const, text },
+    ],
+  };
 }
 
-function normalizeType(raw: string | undefined): typeof VALID_TYPES[number] {
-  const upper = (raw ?? "").toUpperCase();
-  return (VALID_TYPES as readonly string[]).includes(upper)
-    ? upper as typeof VALID_TYPES[number]
-    : "GRAMMATIK_LUECKENTEXT";
-}
-
-async function insertExercise(content: object, level: CEFRLevel, sector: Sector, userId: string, xpReward = 15) {
+// ─── Insérer un exercice importé ──────────────────────────────────────────────
+async function insertExercise(
+  content: object, level: CEFRLevel, sector: Sector,
+  importId: string, userId: string, xpReward = 15, isGenerated = false, orderIndex = 0
+) {
   const c = content as Record<string, unknown>;
-  const [ex] = await db.insert(exercise).values({
-    id: nanoid(),
+  const [ex] = await db.insert(importedExercise).values({
+    id: nanoid(), importId, userId,
     type: normalizeType(c.type as string) as never,
-    level,
-    sector,
+    level, sector,
     skill: normalizeSkill(c.skill as string) as never,
     content: content as never,
     difficultyScore: (c.difficultyScore as number) ?? 0.5,
     xpReward: (c.xpReward as number) ?? xpReward,
-    isAiGenerated: true,
+    isGenerated, orderIndex,
   }).returning();
-
-  await db.insert(spacedRepetition).values({
-    id: nanoid(), userId, exerciseId: ex.id,
-    easeFactor: 2.5, interval: 1, repetitions: 0, nextReviewAt: new Date(),
-  });
-
   return ex.id;
 }
-async function detectDocumentType(text: string): Promise<{
+
+// ─── Détection du type ────────────────────────────────────────────────────────
+async function detectDocumentType(base64: string): Promise<{
   type: "exercises" | "modellsatz" | "grammar" | "unknown";
-  level: CEFRLevel;
-  sector: Sector;
-  summary: string;
+  level: CEFRLevel; sector: Sector; summary: string;
 }> {
-  const prompt = `${SYSTEM_PROMPT_BASE}
-
-Analyse ce texte extrait d'un document allemand et détermine son type.
-
-TEXTE (premiers 3000 caractères):
-${text.slice(0, 3000)}
-
-Réponds en JSON:
+  const response = await anthropic.messages.create({
+    model: AI_MODEL, max_tokens: 400,
+    messages: [pdfMsg(base64, `Analyse ce document PDF allemand et détermine son type.
+Réponds UNIQUEMENT en JSON:
 {
   "type": "exercises" | "modellsatz" | "grammar" | "unknown",
-  "level": "A0" | "A1" | "A2" | "B1" | "B2" | "C1" | "C2",
-  "sector": "IT" | "BUSINESS" | "SANTE" | "DROIT" | "TOURISME" | "QUOTIDIEN" | "AUTRE",
-  "summary": "description courte du document en français (1 phrase)"
+  "level": "A0"|"A1"|"A2"|"B1"|"B2"|"C1"|"C2",
+  "sector": "IT"|"BUSINESS"|"SANTE"|"DROIT"|"TOURISME"|"QUOTIDIEN"|"AUTRE",
+  "summary": "description courte en français (1 phrase)"
 }
-
-Critères:
-- "exercises": feuille d'exercices avec questions/réponses
-- "modellsatz": examen modèle Goethe/ÖSD complet avec plusieurs parties
-- "grammar": livre ou cours de grammaire avec règles et explications
-- "unknown": autre type de document`;
-
-  const response = await anthropic.messages.create({
-    model: AI_MODEL,
-    max_tokens: 300,
-    messages: [{ role: "user", content: prompt }],
+- exercises: feuille d'exercices avec questions/réponses
+- modellsatz: examen modèle Goethe/ÖSD complet avec plusieurs parties
+- grammar: livre ou cours de grammaire`)],
   });
-
   return parseAIJson((response.content[0] as { text: string }).text);
 }
 
 // ─── Traitement exercices ─────────────────────────────────────────────────────
 async function processExercises(
-  text: string, level: CEFRLevel, sector: Sector, userId: string
+  base64: string, level: CEFRLevel, sector: Sector, importId: string, userId: string
 ): Promise<string[]> {
-  const prompt = `${SYSTEM_PROMPT_BASE}
 
-Extrait et convertis les exercices de ce document en JSON.
-Niveau: ${level}, Secteur: ${sector}
+  // ÉTAPE 1 — Extraire TOUT le contenu du PDF (priorité absolue)
+  const extractResponse = await anthropic.messages.create({
+    model: AI_MODEL, max_tokens: 6000,
+    messages: [pdfMsg(base64,
+      `MISSION PRINCIPALE: Extraire TOUS les exercices présents dans ce document PDF.
 
-TEXTE:
-${text.slice(0, 8000)}
+Ne rien inventer. Ne rien omettre. Retourner UNIQUEMENT ce qui est dans le document.
 
-Pour chaque exercice trouvé, génère un objet JSON correspondant à l'un de ces types:
-- LESEN_MULTIPLE_CHOICE, LESEN_RICHTIG_FALSCH, LESEN_LUECKENTEXT
-- GRAMMATIK_LUECKENTEXT, GRAMMATIK_ORDNEN, GRAMMATIK_TRANSFORMATION
-- VOCAB_FLASHCARD, VOCAB_LUECKENTEXT, VOCAB_ZUORDNUNG
-- SCHREIBEN_EMAIL, SCHREIBEN_MEINUNG
+Pour chaque exercice trouvé, retourne un objet JSON avec:
+- "type": le type exact (MATCHING_HEADLINES, MULTIPLE_CHOICE_READING, SITUATION_AD_MATCHING, GRAMMATIK_LUECKENTEXT, SCHREIBEN_EMAIL, HOEREN_MULTIPLE_CHOICE, etc.)
+- TOUTE la structure originale de l'exercice (textes, questions, réponses, options, hints, timeLimit, maxPoints, scoringRules, annonces, etc.)
+- "level": "${level}", "sector": "${sector}", "skill": la compétence (LESEN/SCHREIBEN/HOEREN/SPRECHEN/GRAMMATIK/WORTSCHATZ)
+- "xpReward": 20, "difficultyScore": 0.7
+- "instructions": la consigne en français
 
-Réponds avec un tableau JSON d'exercices (max 10):
-[
-  { "type": "...", "instructions": "...", ...champs selon le type... }
-]
-
-Chaque exercice doit avoir: type, instructions (en français), level: "${level}", sector: "${sector}", skill, xpReward, difficultyScore.`;
-
-  const response = await anthropic.messages.create({
-    model: AI_MODEL,
-    max_tokens: 4000,
-    messages: [{ role: "user", content: prompt }],
+Réponds UNIQUEMENT avec un tableau JSON valide. Pas de texte autour.
+[{ ...exercice complet... }, ...]`
+    )],
   });
 
-  const extracted = parseAIJson<object[]>((response.content[0] as { text: string }).text);
+  const extracted = parseAIJson<object[]>((extractResponse.content[0] as { text: string }).text);
   const exerciseIds: string[] = [];
-
-  for (const content of extracted) {
-    exerciseIds.push(await insertExercise(content, level, sector, userId, 15));
+  for (const [i, content] of extracted.entries()) {
+    exerciseIds.push(await insertExercise(content, level, sector, importId, userId, 15, false, i));
   }
 
-  // Générer 5 exercices supplémentaires du même style
-  const stylePrompt = `${SYSTEM_PROMPT_BASE}
-
-En t'inspirant du style de ces exercices extraits d'un document de niveau ${level}:
-${JSON.stringify(extracted.slice(0, 2))}
-
-Génère 5 nouveaux exercices du même type et niveau pour le secteur ${sector}.
-Réponds avec un tableau JSON de 5 exercices avec les mêmes champs.`;
-
-  const extraResponse = await anthropic.messages.create({
-    model: AI_MODEL,
-    max_tokens: 3000,
-    messages: [{ role: "user", content: stylePrompt }],
-  });
-
-  const extra = parseAIJson<object[]>((extraResponse.content[0] as { text: string }).text);
-  for (const content of extra) {
-    exerciseIds.push(await insertExercise(content, level, sector, userId, 15));
+  // ÉTAPE 2 — Générer des exercices supplémentaires (secondaire, si extraction réussie)
+  if (extracted.length > 0) {
+    try {
+      const extraResponse = await anthropic.messages.create({
+        model: AI_MODEL, max_tokens: 3000,
+        messages: [pdfMsg(base64,
+          `En t'inspirant du style et du niveau de ce document (${level}), génère 5 nouveaux exercices du même type pour le secteur ${sector}.
+Respecte EXACTEMENT la même structure JSON que les exercices du document.
+Réponds avec un tableau JSON de 5 exercices.`
+        )],
+      });
+      const extra = parseAIJson<object[]>((extraResponse.content[0] as { text: string }).text);
+      for (const [i, content] of extra.entries()) {
+        exerciseIds.push(await insertExercise(content, level, sector, importId, userId, 15, true, extracted.length + i));
+      }
+    } catch { /* supplémentaires optionnels — on ignore les erreurs */ }
   }
 
   return exerciseIds;
@@ -151,103 +117,110 @@ Réponds avec un tableau JSON de 5 exercices avec les mêmes champs.`;
 
 // ─── Traitement Modellsatz ────────────────────────────────────────────────────
 async function processModellsatz(
-  text: string, level: CEFRLevel, sector: Sector, userId: string
+  base64: string, level: CEFRLevel, sector: Sector, importId: string, userId: string
 ): Promise<string[]> {
-  const prompt = `${SYSTEM_PROMPT_BASE}
 
-Ce document est un Modellsatz (examen modèle) de niveau ${level}.
-Extrait toutes les parties (Lesen, Schreiben, Hören, Sprechen) et convertis chaque exercice.
+  // ÉTAPE 1 — Extraire TOUT le Modellsatz du PDF (priorité absolue)
+  const extractResponse = await anthropic.messages.create({
+    model: AI_MODEL, max_tokens: 8000,
+    messages: [pdfMsg(base64,
+      `MISSION PRINCIPALE: Extraire INTÉGRALEMENT ce Modellsatz (examen modèle) de niveau ${level}.
 
-TEXTE:
-${text.slice(0, 10000)}
+Extraire TOUTES les parties sans exception:
+- LESEN (Lecture): MATCHING_HEADLINES, MULTIPLE_CHOICE_READING, SITUATION_AD_MATCHING
+- SCHREIBEN (Écriture): email, opinion, description
+- HÖREN (Écoute): QCM sur dialogue, vrai/faux
+- SPRECHEN (Expression orale): dialogue, roleplay
 
-Réponds avec un tableau JSON d'exercices (toutes les parties):
-[{ "type": "...", "instructions": "...", ...}]
+Structure EXACTE à respecter par type:
+• MATCHING_HEADLINES → { type, texts[{number,content,source,correctAnswer,hint}], headlines[{letter,text}], answerGrid, timeLimit, maxPoints, scoringRules, instructions }
+• MULTIPLE_CHOICE_READING → { type, readingText:{title,source,content,glossary[]}, questions[{number,questionText,options:{A,B,C},correctAnswer,explanation,hint}], example, timeLimit, maxPoints, instructions }
+• SITUATION_AD_MATCHING → { type, situations[{number,text,keywords[],correctAnswer,pedagogicalHint}], ads[{id,titre,contenu}], examples[], timeLimit, maxPoints, instructions }
+• GRAMMATIK_LUECKENTEXT → { type, texte:{corps,titre_texte}, questions[{numero,question,options:{a,b,c},bonne_reponse,explication_FR}], vocabulaire_cle[], consigne_FR }
+• SCHREIBEN → { type, consigne_FR, elements_obligatoires[], grille_evaluation[{critere,points_max,description_FR}], expressions_utiles[{usage,expression}], exemple_reponse_modele:{texte,note_FR}, points_max_total, duree_recommandee_minutes }
+• HOEREN → { type, script:{dialogue[{locuteur,replique}]}, questions[{numero,question,options,bonne_reponse}], consigne_FR }
 
-Inclure: type, instructions, level: "${level}", sector: "${sector}", skill, xpReward: 20, difficultyScore.`;
+RÈGLES ABSOLUES:
+1. Extraire le contenu RÉEL du PDF — ne rien inventer
+2. Inclure TOUS les textes, TOUTES les questions, TOUTES les réponses
+3. Inclure les annonces (ads) complètes pour SITUATION_AD_MATCHING
+4. Inclure le texte de lecture complet pour MULTIPLE_CHOICE_READING
+5. Chaque exercice: level="${level}", sector="${sector}", skill approprié, xpReward:20, difficultyScore:0.7
 
-  const response = await anthropic.messages.create({
-    model: AI_MODEL,
-    max_tokens: 5000,
-    messages: [{ role: "user", content: prompt }],
+Réponds UNIQUEMENT avec un tableau JSON valide. Pas de texte autour.
+[{ ...exercice complet... }, ...]`
+    )],
   });
 
-  const extracted = parseAIJson<object[]>((response.content[0] as { text: string }).text);
+  const extracted = parseAIJson<object[]>((extractResponse.content[0] as { text: string }).text);
   const exerciseIds: string[] = [];
-
-  for (const content of extracted) {
-    exerciseIds.push(await insertExercise(content, level, sector, userId, 20));
+  for (const [i, content] of extracted.entries()) {
+    exerciseIds.push(await insertExercise(content, level, sector, importId, userId, 20, false, i));
   }
 
-  // Générer 1 Modellsatz supplémentaire complet
-  const extraPrompt = `${SYSTEM_PROMPT_BASE}
-
-Génère un Modellsatz complet de niveau ${level} pour le secteur ${sector}.
-Inclure: 2 exercices Lesen, 1 Schreiben, 1 Hören (avec script), 1 Sprechen.
-Réponds avec un tableau JSON de 5 exercices.`;
-
-  const extraResponse = await anthropic.messages.create({
-    model: AI_MODEL,
-    max_tokens: 4000,
-    messages: [{ role: "user", content: extraPrompt }],
-  });
-
-  const extra = parseAIJson<object[]>((extraResponse.content[0] as { text: string }).text);
-  for (const content of extra) {
-    exerciseIds.push(await insertExercise(content, level, sector, userId, 20));
+  // ÉTAPE 2 — Générer 1 Modellsatz supplémentaire (secondaire)
+  if (extracted.length > 0) {
+    try {
+      const extraResponse = await anthropic.messages.create({
+        model: AI_MODEL, max_tokens: 5000,
+        messages: [pdfMsg(base64,
+          `En t'inspirant de la structure de ce Modellsatz (niveau ${level}), génère un nouveau Modellsatz complet pour le secteur ${sector}.
+Même structure, mêmes types d'exercices, contenus entièrement nouveaux.
+Réponds avec un tableau JSON de 5 exercices (1 par compétence).`
+        )],
+      });
+      const extra = parseAIJson<object[]>((extraResponse.content[0] as { text: string }).text);
+      for (const [i, content] of extra.entries()) {
+        exerciseIds.push(await insertExercise(content, level, sector, importId, userId, 20, true, extracted.length + i));
+      }
+    } catch { /* supplémentaires optionnels */ }
   }
 
   return exerciseIds;
 }
 
-// ─── Traitement livre de grammaire ────────────────────────────────────────────
+// ─── Traitement grammaire ─────────────────────────────────────────────────────
 async function processGrammar(
-  text: string, level: CEFRLevel, sector: Sector, userId: string
+  base64: string, level: CEFRLevel, sector: Sector, importId: string, userId: string
 ): Promise<{ chapters: object[]; exerciseIds: string[] }> {
-  // Extraire les 3 premiers chapitres/règles
-  const prompt = `${SYSTEM_PROMPT_BASE}
 
-Ce document est un livre de grammaire allemande. Niveau cible: ${level}.
-Extrait les 3 premières règles/chapitres principaux et crée un cours interactif.
+  // ÉTAPE 1 — Extraire le contenu réel du livre (priorité absolue)
+  const extractResponse = await anthropic.messages.create({
+    model: AI_MODEL, max_tokens: 6000,
+    messages: [pdfMsg(base64,
+      `MISSION PRINCIPALE: Extraire les règles de grammaire de ce document. Niveau: ${level}.
 
-TEXTE:
-${text.slice(0, 8000)}
+Extraire les 3 premières règles/chapitres principaux TELS QU'ILS SONT dans le document.
 
 Réponds en JSON:
 {
   "chapters": [
     {
       "title": "titre du chapitre en français",
-      "rule": "explication de la règle en français (2-3 phrases claires)",
-      "ruleDe": "explication en allemand simple",
-      "examples": [
-        { "de": "exemple en allemand", "fr": "traduction", "highlight": "mot clé à retenir" }
-      ],
+      "rule": "explication de la règle en français (2-3 phrases, fidèle au document)",
+      "ruleDe": "explication en allemand simple (du document ou adaptée)",
+      "examples": [{ "de": "exemple en allemand", "fr": "traduction", "highlight": "mot clé" }],
       "tip": "astuce mémo en français"
     }
   ],
   "exercises": [
-    { "type": "GRAMMATIK_LUECKENTEXT", "instructions": "...", ...champs complets... }
+    { "type": "GRAMMATIK_LUECKENTEXT", "instructions": "...", "texte": {...}, "questions": [...], "level": "${level}", "sector": "${sector}", "skill": "GRAMMATIK", "xpReward": 15, "difficultyScore": 0.5 }
   ]
 }
 
-Génère 2 exercices par chapitre (6 au total). Chaque exercice: type, instructions, level: "${level}", sector: "${sector}", skill: "GRAMMATIK", xpReward: 15, difficultyScore: 0.5.`;
-
-  const response = await anthropic.messages.create({
-    model: AI_MODEL,
-    max_tokens: 5000,
-    messages: [{ role: "user", content: prompt }],
+Génère 2 exercices par chapitre (6 au total) basés sur les règles extraites.
+Réponds UNIQUEMENT avec le JSON valide.`
+    )],
   });
 
   const result = parseAIJson<{ chapters: object[]; exercises: object[] }>(
-    (response.content[0] as { text: string }).text
+    (extractResponse.content[0] as { text: string }).text
   );
 
   const exerciseIds: string[] = [];
-  for (const content of result.exercises ?? []) {
-    exerciseIds.push(await insertExercise(content, level, sector, userId, 15));
+  for (const [i, content] of (result.exercises ?? []).entries()) {
+    exerciseIds.push(await insertExercise(content, level, sector, importId, userId, 15, false, i));
   }
-
   return { chapters: result.chapters ?? [], exerciseIds };
 }
 
@@ -259,24 +232,19 @@ export const processDocumentFn = inngest.createFunction(
     retries: 2,
     triggers: [{ event: "document/process" }],
   },
-  async ({ event, step }: { event: { data: { importId: string; userId: string; extractedText: string; level: CEFRLevel; sector: Sector } }; step: { run: <T>(id: string, fn: () => Promise<T>) => Promise<T> } }) => {
-    const { importId, userId, extractedText, level, sector } = event.data as {
-      importId: string;
-      userId: string;
-      extractedText: string;
-      level: CEFRLevel;
-      sector: Sector;
-    };
+  async ({ event, step }: {
+    event: { data: { importId: string; userId: string; pdfBase64: string; level: CEFRLevel; sector: Sector } };
+    step: { run: <T>(id: string, fn: () => Promise<T>) => Promise<T> }
+  }) => {
+    const { importId, userId, pdfBase64, level, sector } = event.data;
 
-    // Marquer comme en cours
     await step.run("mark-processing", async () => {
       await db.update(documentImport).set({ status: "processing", updatedAt: new Date() })
         .where(eq(documentImport.id, importId));
     });
 
-    // Détecter le type
     const detection = await step.run("detect-type", async () => {
-      return detectDocumentType(extractedText);
+      return detectDocumentType(pdfBase64);
     });
 
     await step.run("update-doc-type", async () => {
@@ -286,35 +254,27 @@ export const processDocumentFn = inngest.createFunction(
 
     const docLevel = detection.level ?? level;
     const docSector = detection.sector ?? sector;
-
-    // Traiter selon le type
     let result: object = {};
 
     if (detection.type === "exercises") {
-      const exerciseIds = await step.run("process-exercises", async () => {
-        return processExercises(extractedText, docLevel, docSector, userId);
-      });
+      const exerciseIds = await step.run("process-exercises", async () =>
+        processExercises(pdfBase64, docLevel, docSector, importId, userId));
       result = { type: "exercises", exerciseIds, count: exerciseIds.length, summary: detection.summary };
     } else if (detection.type === "modellsatz") {
-      const exerciseIds = await step.run("process-modellsatz", async () => {
-        return processModellsatz(extractedText, docLevel, docSector, userId);
-      });
+      const exerciseIds = await step.run("process-modellsatz", async () =>
+        processModellsatz(pdfBase64, docLevel, docSector, importId, userId));
       result = { type: "modellsatz", exerciseIds, count: exerciseIds.length, summary: detection.summary };
     } else if (detection.type === "grammar") {
-      const { chapters, exerciseIds } = await step.run("process-grammar", async () => {
-        return processGrammar(extractedText, docLevel, docSector, userId);
-      });
+      const { chapters, exerciseIds } = await step.run("process-grammar", async () =>
+        processGrammar(pdfBase64, docLevel, docSector, importId, userId));
       result = { type: "grammar", chapters, exerciseIds, count: exerciseIds.length, summary: detection.summary };
     } else {
       result = { type: "unknown", summary: detection.summary };
     }
 
-    // Marquer comme terminé
     await step.run("mark-done", async () => {
       await db.update(documentImport).set({
-        status: "done",
-        result: result as never,
-        updatedAt: new Date(),
+        status: "done", result: result as never, updatedAt: new Date(),
       }).where(eq(documentImport.id, importId));
     });
 

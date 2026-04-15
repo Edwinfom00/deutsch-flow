@@ -42,20 +42,36 @@ const nav = [
       { title: "Classement", href: "/league", icon: Zap },
     ],
   },
+  // Aufgabe injecté dynamiquement dans le JSX si éligible
   {
     label: "Compte",
     items: [
-      { title: "Importer un document", href: "/import", icon: Upload },
+      {
+        title: "Importer",
+        icon: Upload,
+        children: [
+          { title: "Upload", href: "/import" },
+          { title: "Exercices", href: "/import/exercises" },
+          { title: "Modellsatz", href: "/import/modellsatz" },
+          { title: "Grammaire", href: "/import/grammar" },
+          { title: "Communauté", href: "/import/community" },
+        ],
+      },
       { title: "Paramètres", href: "/settings", icon: Settings },
     ],
   },
 ];
 
-interface Props { userName: string; userEmail: string; level: string }
+interface Props { userName: string; userEmail: string; level: string; totalXp: number }
 
-export function AppSidebar({ userName, userEmail, level }: Props) {
+const XP_PER_LEVEL: Record<string, number> = {
+  A0: 200, A1: 500, A2: 800, B1: 1200, B2: 1800, C1: 2500, C2: 9999,
+};
+
+export function AppSidebar({ userName, userEmail, level, totalXp }: Props) {
   const pathname = usePathname();
   const router = useRouter();
+  const isAufgabeEligible = totalXp >= (XP_PER_LEVEL[level] ?? 9999);
 
   const handleSignOut = async () => {
     await signOut();
@@ -93,8 +109,7 @@ export function AppSidebar({ userName, userEmail, level }: Props) {
               </p>
             )}
             <SidebarMenu className="gap-0.5">
-              {group.items.map((item) => {
-                const Icon = item.icon;
+              {group.items.map((item) => {                const Icon = item.icon;
 
                 if ("children" in item && item.children) {
                   const isGroupActive = item.children.some((c) => pathname === c.href);
@@ -152,6 +167,30 @@ export function AppSidebar({ userName, userEmail, level }: Props) {
             </SidebarMenu>
           </SidebarGroup>
         ))}
+
+        {/* Aufgabe — visible uniquement si XP suffisant pour passer au niveau suivant */}
+        {isAufgabeEligible && (
+          <SidebarGroup className="mb-2 p-0">
+            <p className="text-[10px] font-semibold text-amber-400/60 uppercase tracking-[0.15em] px-2 mb-1.5">
+              Passage de niveau
+            </p>
+            <SidebarMenu className="gap-0.5">
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={pathname === "/aufgabe"}
+                  className={cn("rounded-md h-9 text-[13px] font-medium text-amber-400 hover:text-amber-300", pathname === "/aufgabe" && "font-semibold")}
+                  render={
+                    <Link href="/aufgabe" className="flex items-center gap-2">
+                      <GraduationCap className="h-4 w-4 shrink-0" />
+                      <span>Aufgabe · {level} → suivant</span>
+                      <span className="ml-auto text-[9px] font-black bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded-sm">PRÊT</span>
+                    </Link>
+                  }
+                />
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       {/* Footer */}

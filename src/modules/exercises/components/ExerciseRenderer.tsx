@@ -19,6 +19,11 @@ import { GrammatikTransformationRenderer } from "./renderers/GrammatikTransforma
 import { SprechenRenderer } from "./renderers/SprechenRenderer";
 import { ReihenfolgeRenderer } from "./renderers/ReihenfolgeRenderer";
 import { FehlerkorrekturRenderer } from "./renderers/FehlerkorrekturRenderer";
+import { MatchingHeadlinesRenderer } from "./renderers/osd/MatchingHeadlinesRenderer";
+import { MultipleChoiceReadingRenderer } from "./renderers/osd/MultipleChoiceReadingRenderer";
+import { SituationAdMatchingRenderer } from "./renderers/osd/SituationAdMatchingRenderer";
+import { OsdLueckentextRenderer } from "./renderers/osd/OsdLueckentextRenderer";
+import { SchreibenOsdRenderer } from "./renderers/osd/SchreibenOsdRenderer";
 
 export interface ExerciseResult {
   score: number;
@@ -39,13 +44,19 @@ export function ExerciseRenderer({ exercise, onComplete, onSkip }: ExerciseRende
 
   const handleAnswer = (score: number, quality: number, feedback?: string) => {
     const timeSpentSeconds = Math.round((Date.now() - startTime) / 1000);
-    setResult({ score, quality, timeSpentSeconds, feedback });
+    // Normaliser le feedback — peut être un objet si l'IA retourne du JSON structuré
+    const feedbackStr = feedback == null
+      ? undefined
+      : typeof feedback === "string"
+      ? feedback
+      : JSON.stringify(feedback);
+    setResult({ score, quality, timeSpentSeconds, feedback: feedbackStr });
   };
 
   const handleNext = () => { if (result) onComplete(result); };
 
   return (
-    <div className="w-full max-w-2xl mx-auto space-y-4">
+    <div className="w-full max-w-5xl mx-auto space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
@@ -59,7 +70,10 @@ export function ExerciseRenderer({ exercise, onComplete, onSkip }: ExerciseRende
       {/* Instructions */}
       <div className="bg-white border border-gray-200 rounded-md p-4">
         <p className="text-gray-900 font-medium leading-relaxed text-sm">
-          {exercise.instructions}
+          {exercise.instructions
+            || (exercise as unknown as Record<string, unknown>).consigne_FR as string
+            || (exercise as unknown as Record<string, unknown>).consigne as string
+            || ""}
         </p>
         {exercise.instructionsDe && (
           <p className="mt-1.5 text-gray-400 text-xs italic">{exercise.instructionsDe}</p>
@@ -108,7 +122,11 @@ export function ExerciseRenderer({ exercise, onComplete, onSkip }: ExerciseRende
               </p>
             </div>
             {result.feedback && (
-              <p className="text-sm text-gray-600 leading-relaxed">{result.feedback}</p>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                {typeof result.feedback === "string"
+                  ? result.feedback
+                  : JSON.stringify(result.feedback)}
+              </p>
             )}
             <div className="flex gap-2 pt-1">
               <button
@@ -135,11 +153,62 @@ function renderExercise(
   onAnswer: (score: number, quality: number, feedback?: string) => void,
   answered: boolean
 ) {
-  const type = exercise.type as string;
+  // Lire le type ORIGINAL dans le contenu (avant normalisation)
+  const originalType = ((exercise as unknown as Record<string, unknown>).type as string ?? "").toUpperCase();
+  const type = originalType;
+
+  // ── Détection par structure quand le type est absent ─────────────────────
+  const content = exercise as unknown as Record<string, unknown>;
+  if (!type || type === "") {
+    // Exercice avec texte + questions (Lesen/Hören)
+    if (content.texte && content.questions) {
+      return <OsdLueckentextRenderer exercise={exercise as never} onAnswer={onAnswer} answered={answered} />;
+    }
+    // Production écrite (Schreiben) — grille_evaluation ou elements_obligatoires
+    if (content.grille_evaluation || content.elements_obligatoires || content.competence === "Schreiben") {
+      return <SchreibenOsdRenderer exercise={exercise as never} onAnswer={onAnswer} answered={answered} />;
+    }
+    // Compréhension orale — script_audio
+    if (content.script_audio) {
+      const script = content.script_audio as { dialogue?: Array<{ locuteur: string; replique: string }> };
+      const scriptText = script.dialogue?.map((d) => `${d.locuteur}: ${d.replique}`).join("\n") ?? "";
+      return <HoerenMCRenderer exercise={{
+        ...exercise,
+        type: "HOEREN_MULTIPLE_CHOICE",
+        script: scriptText,
+        question: (content.questions as Array<{ question?: string }>)?.[0]?.question ?? "",
+        options: (() => {
+          const opts = (content.questions as Array<{ options?: Record<string, string> }>)?.[0]?.options ?? {};
+          return Object.entries(opts).map(([id, text]) => ({
+            id, text,
+            isCorrect: id === (content.questions as Array<{ bonne_reponse?: string }>)?.[0]?.bonne_reponse,
+          }));
+        })(),
+      } as never} onAnswer={onAnswer} answered={answered} />;
+    }
+  }
+
+  // ── Types ÖSD/Goethe spécifiques ─────────────────────────────────────────
+  if (type === "MATCHING_HEADLINES" || type === "HEADLINE_MATCHING")
+    return <MatchingHeadlinesRenderer exercise={exercise as never} onAnswer={onAnswer} answered={answered} />;
+
+  if (type === "MULTIPLE_CHOICE_READING" || type === "READING_COMPREHENSION" || type === "LESEVERSTEHEN")
+    return <MultipleChoiceReadingRenderer exercise={exercise as never} onAnswer={onAnswer} answered={answered} />;
+
+  if (type === "SITUATION_AD_MATCHING" || type === "AD_MATCHING" || type === "TEXT_MATCHING")
+    return <SituationAdMatchingRenderer exercise={exercise as never} onAnswer={onAnswer} answered={answered} />;
+
+  // Lückentext ÖSD (avec texte.corps ou vocabulaire_cle)
+  const hasOsdStructure = !!(exercise as unknown as Record<string, unknown>).texte ||
+    !!(exercise as unknown as Record<string, unknown>).vocabulaire_cle ||
+    !!(exercise as unknown as Record<string, unknown>).consigne_FR;
+  if ((type === "GRAMMATIK_LUECKENTEXT" || type === "LESEN_LUECKENTEXT" || type === "VOCAB_LUECKENTEXT") && hasOsdStructure)
+    return <OsdLueckentextRenderer exercise={exercise as never} onAnswer={onAnswer} answered={answered} />;
+
+  // ── Types standard ────────────────────────────────────────────────────────
 
   if (type === "LESEN_MULTIPLE_CHOICE")
     return <MultipleChoiceRenderer exercise={exercise as never} onAnswer={onAnswer} answered={answered} />;
-
   if (type === "HOEREN_MULTIPLE_CHOICE")
     return <HoerenMCRenderer exercise={exercise as never} onAnswer={onAnswer} answered={answered} />;
 
@@ -183,8 +252,9 @@ function renderExercise(
     return <SprechenRenderer exercise={exercise as never} onAnswer={onAnswer} answered={answered} />;
 
   return (
-    <div className="bg-gray-50 border border-gray-200 rounded-md p-5 text-center">
-      <p className="text-xs text-gray-400 mb-3">Type : <span className="font-mono text-gray-600">{type}</span></p>
+    <div className="bg-gray-50 border border-gray-200 rounded-md p-5 text-center space-y-3">
+      <p className="text-xs text-gray-500">Type : <span className="font-mono text-gray-700">{type}</span></p>
+      <p className="text-xs text-gray-400">Ce type d&apos;exercice n&apos;a pas encore de rendu dédié.</p>
       <button onClick={() => onAnswer(80, 4)} className="h-8 px-4 bg-gray-900 text-white text-xs font-semibold rounded-md">
         Marquer comme fait
       </button>

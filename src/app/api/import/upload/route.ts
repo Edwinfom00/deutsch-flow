@@ -19,19 +19,12 @@ export async function POST(req: NextRequest) {
   if (file.size > 10 * 1024 * 1024) return NextResponse.json({ error: "Fichier trop grand (max 10MB)" }, { status: 400 });
   if (file.type !== "application/pdf") return NextResponse.json({ error: "Seuls les PDF sont acceptés" }, { status: 400 });
 
-  // Extraire le texte du PDF avec unpdf (compatible Next.js, pas de dépendances natives)
+  // Convertir en base64 — Claude lit le PDF directement, plus efficace que l'extraction texte
   const buffer = Buffer.from(await file.arrayBuffer());
-  const { extractText } = await import("unpdf");
-  const { text: extractedText } = await extractText(new Uint8Array(buffer), { mergePages: true });
+  const base64 = buffer.toString("base64");
 
-  if (!extractedText || extractedText.trim().length < 50) {
-    return NextResponse.json({ error: "Impossible d'extraire le texte du PDF" }, { status: 400 });
-  }
-
-  // Récupérer le profil pour level/sector
   const profile = await db.query.userProfile.findFirst({ where: eq(userProfile.userId, uid) });
 
-  // Créer l'entrée en DB
   const [doc] = await db.insert(documentImport).values({
     id: nanoid(),
     userId: uid,
@@ -39,16 +32,16 @@ export async function POST(req: NextRequest) {
     fileSize: file.size,
     docType: "unknown",
     status: "pending",
-    extractedText,
+    // On stocke le base64 temporairement pour Inngest
+    extractedText: `BASE64:${base64}`,
   }).returning();
 
-  // Déclencher le job Inngest
   await inngest.send({
     name: "document/process",
     data: {
       importId: doc.id,
       userId: uid,
-      extractedText,
+      pdfBase64: base64,
       level: profile?.level ?? "A1",
       sector: profile?.sector ?? "QUOTIDIEN",
     },
