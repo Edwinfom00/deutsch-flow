@@ -209,7 +209,7 @@ src/
 ### Installation
 
 ```bash
-git clone https://github.com/your-username/deutsch-flow.git
+git clone https://github.com/Edwinfom00/deutsch-flow.git
 cd deutsch-flow
 npm install
 ```
