@@ -86,8 +86,8 @@ export function SituationAdMatchingRenderer({ exercise, onAnswer, answered }: Pr
       {exercise.examples && exercise.examples.length > 0 && (
         <div className="bg-blue-50 border border-blue-200 rounded-md p-3.5 space-y-2">
           <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Exemples</p>
-          {exercise.examples.map((ex) => (
-            <div key={ex.number} className="flex items-center gap-2 text-xs text-blue-800">
+          {exercise.examples.map((ex, i) => (
+            <div key={`ex-${ex.number}-${i}`} className="flex items-center gap-2 text-xs text-blue-800">
               <span className="font-bold shrink-0">Bsp. {ex.number}:</span>
               <span className="flex-1">{ex.situation}</span>
               <span className="font-black bg-blue-200 px-1.5 py-0.5 rounded-sm shrink-0">{ex.correctAnswer}</span>
@@ -132,7 +132,7 @@ export function SituationAdMatchingRenderer({ exercise, onAnswer, answered }: Pr
           const noAnswerKnown = !sit.correctAnswer;
 
           return (
-            <motion.div key={sit.number} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+            <motion.div key={`sit-${sit.number}-${i}`} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.06 }}
               className={cn("border rounded-md p-3.5 space-y-2.5",
                 isCorrect && "border-emerald-200 bg-emerald-50",
@@ -147,8 +147,8 @@ export function SituationAdMatchingRenderer({ exercise, onAnswer, answered }: Pr
 
               {sit.keywords && sit.keywords.length > 0 && (
                 <div className="flex flex-wrap gap-1 ml-7">
-                  {sit.keywords.map((kw) => (
-                    <span key={kw} className="text-[9px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-sm">{kw}</span>
+                  {sit.keywords.map((kw, ki) => (
+                    <span key={`kw-${ki}-${kw}`} className="text-[9px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-sm">{kw}</span>
                   ))}
                 </div>
               )}

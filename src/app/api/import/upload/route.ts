@@ -19,7 +19,8 @@ export async function POST(req: NextRequest) {
   if (file.size > 10 * 1024 * 1024) return NextResponse.json({ error: "Fichier trop grand (max 10MB)" }, { status: 400 });
   if (file.type !== "application/pdf") return NextResponse.json({ error: "Seuls les PDF sont acceptés" }, { status: 400 });
 
-  // Convertir en base64 — Claude lit le PDF directement, plus efficace que l'extraction texte
+  // Convertir en base64 et stocker en DB — Inngest le lira depuis la DB
+  // On ne passe PAS le base64 dans l'event Inngest (trop lourd)
   const buffer = Buffer.from(await file.arrayBuffer());
   const base64 = buffer.toString("base64");
 
@@ -32,16 +33,16 @@ export async function POST(req: NextRequest) {
     fileSize: file.size,
     docType: "unknown",
     status: "pending",
-    // On stocke le base64 temporairement pour Inngest
+    // Stockage du base64 en DB — Inngest le récupère via importId
     extractedText: `BASE64:${base64}`,
   }).returning();
 
+  // On envoie uniquement l'importId — pas le base64
   await inngest.send({
     name: "document/process",
     data: {
       importId: doc.id,
       userId: uid,
-      pdfBase64: base64,
       level: profile?.level ?? "A1",
       sector: profile?.sector ?? "QUOTIDIEN",
     },

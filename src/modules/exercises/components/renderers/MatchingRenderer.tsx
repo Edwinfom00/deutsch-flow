@@ -71,7 +71,7 @@ export function MatchingRenderer({ exercise, onAnswer, answered }: Props) {
             const matchedId = Object.entries(matches).find(([, v]) => v === right)?.[0];
             const isCorrectMatch = answered && matchedId && exercise.pairs.find((p) => p.id === matchedId)?.right === right;
             return (
-              <motion.button key={right} initial={{ opacity: 0, x: 6 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}
+              <motion.button key={`right-${i}`} initial={{ opacity: 0, x: 6 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}
                 onClick={() => handleRight(right)} disabled={answered || isMatched}
                 className={cn(
                   "w-full p-3 rounded-md border text-sm text-left transition-all",

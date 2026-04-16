@@ -67,8 +67,6 @@ Réponds UNIQUEMENT en JSON:
 async function processExercises(
   base64: string, level: CEFRLevel, sector: Sector, importId: string, userId: string
 ): Promise<string[]> {
-
-  // ÉTAPE 1 — Extraire TOUT le contenu du PDF (priorité absolue)
   const extractResponse = await anthropic.messages.create({
     model: AI_MODEL, max_tokens: 6000,
     messages: [pdfMsg(base64,
@@ -94,7 +92,6 @@ Réponds UNIQUEMENT avec un tableau JSON valide. Pas de texte autour.
     exerciseIds.push(await insertExercise(content, level, sector, importId, userId, 15, false, i));
   }
 
-  // ÉTAPE 2 — Générer des exercices supplémentaires (secondaire, si extraction réussie)
   if (extracted.length > 0) {
     try {
       const extraResponse = await anthropic.messages.create({
@@ -109,7 +106,7 @@ Réponds avec un tableau JSON de 5 exercices.`
       for (const [i, content] of extra.entries()) {
         exerciseIds.push(await insertExercise(content, level, sector, importId, userId, 15, true, extracted.length + i));
       }
-    } catch { /* supplémentaires optionnels — on ignore les erreurs */ }
+    } catch { /* supplémentaires optionnels */ }
   }
 
   return exerciseIds;
@@ -119,8 +116,6 @@ Réponds avec un tableau JSON de 5 exercices.`
 async function processModellsatz(
   base64: string, level: CEFRLevel, sector: Sector, importId: string, userId: string
 ): Promise<string[]> {
-
-  // ÉTAPE 1 — Extraire TOUT le Modellsatz du PDF (priorité absolue)
   const extractResponse = await anthropic.messages.create({
     model: AI_MODEL, max_tokens: 8000,
     messages: [pdfMsg(base64,
@@ -158,7 +153,6 @@ Réponds UNIQUEMENT avec un tableau JSON valide. Pas de texte autour.
     exerciseIds.push(await insertExercise(content, level, sector, importId, userId, 20, false, i));
   }
 
-  // ÉTAPE 2 — Générer 1 Modellsatz supplémentaire (secondaire)
   if (extracted.length > 0) {
     try {
       const extraResponse = await anthropic.messages.create({
@@ -183,8 +177,6 @@ Réponds avec un tableau JSON de 5 exercices (1 par compétence).`
 async function processGrammar(
   base64: string, level: CEFRLevel, sector: Sector, importId: string, userId: string
 ): Promise<{ chapters: object[]; exerciseIds: string[] }> {
-
-  // ÉTAPE 1 — Extraire le contenu réel du livre (priorité absolue)
   const extractResponse = await anthropic.messages.create({
     model: AI_MODEL, max_tokens: 6000,
     messages: [pdfMsg(base64,
@@ -233,51 +225,95 @@ export const processDocumentFn = inngest.createFunction(
     triggers: [{ event: "document/process" }],
   },
   async ({ event, step }: {
-    event: { data: { importId: string; userId: string; pdfBase64: string; level: CEFRLevel; sector: Sector } };
+    event: { data: { importId: string; userId: string; level: CEFRLevel; sector: Sector } };
     step: { run: <T>(id: string, fn: () => Promise<T>) => Promise<T> }
   }) => {
-    const { importId, userId, pdfBase64, level, sector } = event.data;
+    const { importId, userId, level, sector } = event.data;
 
+    // ── Marquer en cours ──────────────────────────────────────────────────────
     await step.run("mark-processing", async () => {
-      await db.update(documentImport).set({ status: "processing", updatedAt: new Date() })
+      await db.update(documentImport)
+        .set({ status: "processing", updatedAt: new Date() })
         .where(eq(documentImport.id, importId));
     });
 
-    const detection = await step.run("detect-type", async () => {
-      return detectDocumentType(pdfBase64);
-    });
+    try {
+      // ── Lire le base64 depuis la DB (pas depuis l'event) ──────────────────
+      const pdfBase64 = await step.run("read-pdf-from-db", async () => {
+        const doc = await db.query.documentImport.findFirst({
+          where: eq(documentImport.id, importId),
+        });
+        if (!doc?.extractedText?.startsWith("BASE64:")) {
+          throw new Error("PDF introuvable en base de données");
+        }
+        return doc.extractedText.slice(7); // retirer le préfixe "BASE64:"
+      });
 
-    await step.run("update-doc-type", async () => {
-      await db.update(documentImport).set({ docType: detection.type, updatedAt: new Date() })
-        .where(eq(documentImport.id, importId));
-    });
+      // ── Détecter le type ──────────────────────────────────────────────────
+      const detection = await step.run("detect-type", async () => {
+        return detectDocumentType(pdfBase64);
+      });
 
-    const docLevel = detection.level ?? level;
-    const docSector = detection.sector ?? sector;
-    let result: object = {};
+      await step.run("update-doc-type", async () => {
+        await db.update(documentImport)
+          .set({ docType: detection.type, updatedAt: new Date() })
+          .where(eq(documentImport.id, importId));
+      });
 
-    if (detection.type === "exercises") {
-      const exerciseIds = await step.run("process-exercises", async () =>
-        processExercises(pdfBase64, docLevel, docSector, importId, userId));
-      result = { type: "exercises", exerciseIds, count: exerciseIds.length, summary: detection.summary };
-    } else if (detection.type === "modellsatz") {
-      const exerciseIds = await step.run("process-modellsatz", async () =>
-        processModellsatz(pdfBase64, docLevel, docSector, importId, userId));
-      result = { type: "modellsatz", exerciseIds, count: exerciseIds.length, summary: detection.summary };
-    } else if (detection.type === "grammar") {
-      const { chapters, exerciseIds } = await step.run("process-grammar", async () =>
-        processGrammar(pdfBase64, docLevel, docSector, importId, userId));
-      result = { type: "grammar", chapters, exerciseIds, count: exerciseIds.length, summary: detection.summary };
-    } else {
-      result = { type: "unknown", summary: detection.summary };
+      const docLevel = detection.level ?? level;
+      const docSector = detection.sector ?? sector;
+      let result: object = {};
+
+      if (detection.type === "exercises") {
+        const exerciseIds = await step.run("process-exercises", async () =>
+          processExercises(pdfBase64, docLevel, docSector, importId, userId));
+        result = { type: "exercises", exerciseIds, count: exerciseIds.length, summary: detection.summary };
+
+      } else if (detection.type === "modellsatz") {
+        const exerciseIds = await step.run("process-modellsatz", async () =>
+          processModellsatz(pdfBase64, docLevel, docSector, importId, userId));
+        result = { type: "modellsatz", exerciseIds, count: exerciseIds.length, summary: detection.summary };
+
+      } else if (detection.type === "grammar") {
+        const { chapters, exerciseIds } = await step.run("process-grammar", async () =>
+          processGrammar(pdfBase64, docLevel, docSector, importId, userId));
+        result = { type: "grammar", chapters, exerciseIds, count: exerciseIds.length, summary: detection.summary };
+
+      } else {
+        result = { type: "unknown", summary: detection.summary };
+      }
+
+      // ── Succès ────────────────────────────────────────────────────────────
+      await step.run("mark-done", async () => {
+        await db.update(documentImport)
+          .set({
+            status: "done",
+            result: result as never,
+            // Libérer le base64 de la DB une fois le traitement terminé
+            extractedText: null,
+            updatedAt: new Date(),
+          })
+          .where(eq(documentImport.id, importId));
+      });
+
+      return result;
+
+    } catch (err) {
+      // ── Échec — écrire le statut error + message lisible ─────────────────
+      const message = err instanceof Error ? err.message : "Erreur inconnue lors du traitement";
+
+      await step.run("mark-error", async () => {
+        await db.update(documentImport)
+          .set({
+            status: "error",
+            errorMessage: message,
+            updatedAt: new Date(),
+          })
+          .where(eq(documentImport.id, importId));
+      });
+
+      // Re-throw pour que Inngest enregistre l'échec et gère les retries
+      throw err;
     }
-
-    await step.run("mark-done", async () => {
-      await db.update(documentImport).set({
-        status: "done", result: result as never, updatedAt: new Date(),
-      }).where(eq(documentImport.id, importId));
-    });
-
-    return result;
   }
 );

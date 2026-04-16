@@ -7,58 +7,50 @@ import {
   jsonb,
   pgEnum,
   real,
+  index,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { user } from "./auth.schema";
 import { ceferLevelEnum, sectorEnum } from "./profile.schema";
 
-// ─── Exercise Types (inspirés Goethe/ÖSD) ────────────────────────────────────
 export const exerciseTypeEnum = pgEnum("exercise_type", [
-  // LESEN (Lecture)
-  "LESEN_ZUORDNUNG",        // Associer textes et titres/résumés
-  "LESEN_MULTIPLE_CHOICE",  // QCM sur un texte
-  "LESEN_RICHTIG_FALSCH",   // Vrai/Faux/Pas dans le texte
-  "LESEN_LUECKENTEXT",      // Texte à trous (lecture)
-  "LESEN_REIHENFOLGE",      // Remettre dans l'ordre
-
-  // SCHREIBEN (Écriture)
-  "SCHREIBEN_EMAIL",        // Écrire un email formel/informel
-  "SCHREIBEN_NOTIZ",        // Rédiger une note/message
-  "SCHREIBEN_MEINUNG",      // Exprimer son opinion
-  "SCHREIBEN_BESCHREIBUNG", // Décrire une image/situation
-  "SCHREIBEN_ZUSAMMENFASSUNG", // Résumer un texte
-
-  // HÖREN (Écoute)
-  "HOEREN_MULTIPLE_CHOICE", // QCM sur un audio
-  "HOEREN_ZUORDNUNG",       // Associer dialogues et situations
-  "HOEREN_ERGAENZUNG",      // Compléter pendant l'écoute
-  "HOEREN_RICHTIG_FALSCH",  // Vrai/Faux sur audio
-
-  // SPRECHEN (Expression orale)
-  "SPRECHEN_VORSTELLEN",    // Se présenter
-  "SPRECHEN_DIALOG",        // Dialogue guidé avec l'IA
-  "SPRECHEN_BESCHREIBUNG",  // Décrire une image à l'oral
-  "SPRECHEN_DISKUSSION",    // Discuter d'un sujet
-  "SPRECHEN_ROLEPLAY",      // Jeu de rôle situationnel
-
-  // WORTSCHATZ (Vocabulaire)
-  "VOCAB_FLASHCARD",        // Carte mémo avec spaced repetition
-  "VOCAB_LUECKENTEXT",      // Phrase à compléter
-  "VOCAB_ZUORDNUNG",        // Associer mot et définition
-  "VOCAB_BILD",             // Associer image et mot
-  "VOCAB_SEKTOR",           // Vocab sectoriel spécifique
-
-  // GRAMMATIK (Grammaire)
-  "GRAMMATIK_LUECKENTEXT",  // Conjugaison / déclinaison à trous
-  "GRAMMATIK_ORDNEN",       // Construire une phrase
-  "GRAMMATIK_TRANSFORMATION", // Transformer une phrase
-  "GRAMMATIK_FEHLERKORREKTUR", // Corriger les erreurs
+  "LESEN_ZUORDNUNG",
+  "LESEN_MULTIPLE_CHOICE",
+  "LESEN_RICHTIG_FALSCH",
+  "LESEN_LUECKENTEXT",
+  "LESEN_REIHENFOLGE",
+  "SCHREIBEN_EMAIL",
+  "SCHREIBEN_NOTIZ",
+  "SCHREIBEN_MEINUNG",
+  "SCHREIBEN_BESCHREIBUNG",
+  "SCHREIBEN_ZUSAMMENFASSUNG",
+  "HOEREN_MULTIPLE_CHOICE",
+  "HOEREN_ZUORDNUNG",
+  "HOEREN_ERGAENZUNG",
+  "HOEREN_RICHTIG_FALSCH",
+  "SPRECHEN_VORSTELLEN",
+  "SPRECHEN_DIALOG",
+  "SPRECHEN_BESCHREIBUNG",
+  "SPRECHEN_DISKUSSION",
+  "SPRECHEN_ROLEPLAY",
+  "VOCAB_FLASHCARD",
+  "VOCAB_LUECKENTEXT",
+  "VOCAB_ZUORDNUNG",
+  "VOCAB_BILD",
+  "VOCAB_SEKTOR",
+  "GRAMMATIK_LUECKENTEXT",
+  "GRAMMATIK_ORDNEN",
+  "GRAMMATIK_TRANSFORMATION",
+  "GRAMMATIK_FEHLERKORREKTUR",
+  "MATCHING_HEADLINES",
+  "MULTIPLE_CHOICE_READING",
+  "SITUATION_AD_MATCHING",
 ]);
 
 export const skillEnum = pgEnum("skill", [
   "LESEN", "SCHREIBEN", "HOEREN", "SPRECHEN", "WORTSCHATZ", "GRAMMATIK",
 ]);
 
-// ─── Lessons ──────────────────────────────────────────────────────────────────
 export const lesson = pgTable("lesson", {
   id: text("id").primaryKey(),
   title: text("title").notNull(),
@@ -75,7 +67,6 @@ export const lesson = pgTable("lesson", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-// ─── Exercises ─────────────────────────────────────────────────────────────────
 export const exercise = pgTable("exercise", {
   id: text("id").primaryKey(),
   lessonId: text("lesson_id").references(() => lesson.id, { onDelete: "cascade" }),
@@ -83,148 +74,132 @@ export const exercise = pgTable("exercise", {
   level: ceferLevelEnum("level").notNull(),
   sector: sectorEnum("sector").notNull().default("QUOTIDIEN"),
   skill: skillEnum("skill").notNull(),
-  // Le contenu JSON de l'exercice (instructions, contenus, réponses, etc.)
   content: jsonb("content").notNull(),
-  // Indice de difficulté 0-1 pour l'algorithme adaptatif
   difficultyScore: real("difficulty_score").notNull().default(0.5),
   xpReward: integer("xp_reward").notNull().default(10),
   isAiGenerated: boolean("is_ai_generated").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, (t) => [
+  index("exercise_level_skill_idx").on(t.level, t.skill),
+  index("exercise_lesson_id_idx").on(t.lessonId),
+]);
 
-// ─── User Progress ────────────────────────────────────────────────────────────
 export const userProgress = pgTable("user_progress", {
   id: text("id").primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-  lessonId: text("lesson_id")
-    .notNull()
-    .references(() => lesson.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  lessonId: text("lesson_id").notNull().references(() => lesson.id, { onDelete: "cascade" }),
   completed: boolean("completed").notNull().default(false),
-  score: real("score"), // 0-100
+  score: real("score"),
   timeSpentSeconds: integer("time_spent_seconds"),
   xpEarned: integer("xp_earned").notNull().default(0),
   completedAt: timestamp("completed_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, (t) => [
+  index("user_progress_user_id_idx").on(t.userId),
+]);
 
-// ─── Spaced Repetition ────────────────────────────────────────────────────────
 export const spacedRepetition = pgTable("spaced_repetition", {
   id: text("id").primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-  exerciseId: text("exercise_id")
-    .notNull()
-    .references(() => exercise.id, { onDelete: "cascade" }),
-  // Algorithme SM-2
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  exerciseId: text("exercise_id").notNull().references(() => exercise.id, { onDelete: "cascade" }),
   easeFactor: real("ease_factor").notNull().default(2.5),
-  interval: integer("interval").notNull().default(1), // jours
+  interval: integer("interval").notNull().default(1),
   repetitions: integer("repetitions").notNull().default(0),
   nextReviewAt: timestamp("next_review_at").notNull().defaultNow(),
   lastReviewAt: timestamp("last_review_at"),
-  lastQuality: integer("last_quality"), // 0-5 (SM-2)
+  lastQuality: integer("last_quality"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (t) => [
+  index("sr_user_next_review_idx").on(t.userId, t.nextReviewAt),
+  index("sr_exercise_id_idx").on(t.exerciseId),
+  uniqueIndex("sr_user_exercise_unique_idx").on(t.userId, t.exerciseId),
+]);
 
-// ─── Active Learn Session (session en cours, persistée) ──────────────────────
 export const activeLearnSession = pgTable("active_learn_session", {
   id: text("id").primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .unique() // une seule session active par utilisateur
-    .references(() => user.id, { onDelete: "cascade" }),
-  exerciseIds: jsonb("exercise_ids").notNull(), // string[]
-  exercisesData: jsonb("exercises_data").notNull(), // SessionExercise[]
+  userId: text("user_id").notNull().unique().references(() => user.id, { onDelete: "cascade" }),
+  exerciseIds: jsonb("exercise_ids").notNull(),
+  exercisesData: jsonb("exercises_data").notNull(),
   currentIndex: integer("current_index").notNull().default(0),
-  results: jsonb("results").notNull().default([]), // résultats partiels
+  results: jsonb("results").notNull().default([]),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-// ─── Daily Sessions ───────────────────────────────────────────────────────────
 export const dailySession = pgTable("daily_session", {
   id: text("id").primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-  date: text("date").notNull(), // YYYY-MM-DD
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  date: text("date").notNull(),
   xpEarned: integer("xp_earned").notNull().default(0),
   exercisesCompleted: integer("exercises_completed").notNull().default(0),
   timeSpentSeconds: integer("time_spent_seconds").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, (t) => [
+  uniqueIndex("daily_session_user_date_idx").on(t.userId, t.date),
+]);
 
-// ─── Skill Performance (profil adaptatif par compétence) ─────────────────────
 export const skillPerformance = pgTable("skill_performance", {
   id: text("id").primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
   skill: skillEnum("skill").notNull(),
   avgScore: real("avg_score").notNull().default(50),
   totalAttempts: integer("total_attempts").notNull().default(0),
   failedAttempts: integer("failed_attempts").notNull().default(0),
   weakExerciseTypes: jsonb("weak_exercise_types").notNull().default({}),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (t) => [
+  uniqueIndex("skill_perf_user_skill_idx").on(t.userId, t.skill),
+]);
 
-// ─── Word Detail Cache (détail IA mis en cache par exercice) ─────────────────
 export const wordDetailCache = pgTable("word_detail_cache", {
-  exerciseId: text("exercise_id").primaryKey()
-    .references(() => exercise.id, { onDelete: "cascade" }),
+  exerciseId: text("exercise_id").primaryKey().references(() => exercise.id, { onDelete: "cascade" }),
   definitionDe: text("definition_de").notNull(),
   definitionFr: text("definition_fr").notNull(),
   wordType: text("word_type").notNull(),
   plural: text("plural"),
-  sentences: jsonb("sentences").notNull(), // Array<{de,fr,context}>
+  sentences: jsonb("sentences").notNull(),
   synonyms: jsonb("synonyms").notNull().default([]),
   antonyms: jsonb("antonyms").notNull().default([]),
   tip: text("tip"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-// ─── Speak Scenarios Cache ────────────────────────────────────────────────────
 export const speakScenario = pgTable("speak_scenario", {
   id: text("id").primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
   title: text("title").notNull(),
   description: text("description").notNull(),
   aiRole: text("ai_role").notNull(),
   userRole: text("user_role").notNull(),
   opener: text("opener").notNull(),
-  difficulty: text("difficulty").notNull(), // facile | moyen | difficile
+  difficulty: text("difficulty").notNull(),
   sector: text("sector").notNull(),
   level: text("level").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, (t) => [
+  index("speak_scenario_user_id_idx").on(t.userId),
+]);
 
-// ─── Mot du jour ─────────────────────────────────────────────────────────────
-// Une entrée par (date, level) — partagée entre tous les utilisateurs de ce niveau
 export const wordOfDay = pgTable("word_of_day", {
   id: text("id").primaryKey(),
-  date: text("date").notNull(),   // YYYY-MM-DD
+  date: text("date").notNull(),
   level: ceferLevelEnum("level").notNull(),
   word: text("word").notNull(),
-  article: text("article"),       // der/die/das pour les noms
+  article: text("article"),
   translation: text("translation").notNull(),
   exampleDe: text("example_de").notNull(),
   exampleFr: text("example_fr").notNull(),
-  wordType: text("word_type").notNull(), // Nomen / Verb / Adjektiv / etc.
+  wordType: text("word_type").notNull(),
   tip: text("tip"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, (t) => [
+  index("word_of_day_date_level_idx").on(t.date, t.level),
+]);
 
-// ─── Document Import ──────────────────────────────────────────────────────────
 export const documentImport = pgTable("document_import", {
   id: text("id").primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
   fileName: text("file_name").notNull(),
   fileSize: integer("file_size").notNull(),
   docType: text("doc_type").notNull(),
@@ -234,20 +209,19 @@ export const documentImport = pgTable("document_import", {
   errorMessage: text("error_message"),
   isPublic: boolean("is_public").notNull().default(false),
   publishedAt: timestamp("published_at"),
-  level: ceferLevelEnum("level"),  // niveau CEFR du document (pour filtrage communauté)
+  level: ceferLevelEnum("level"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+}, (t) => [
+  index("doc_import_user_status_idx").on(t.userId, t.status, t.docType),
+  index("doc_import_public_level_idx").on(t.isPublic, t.level, t.status),
+  index("doc_import_created_at_idx").on(t.createdAt),
+]);
 
-// ─── Imported Exercise (séparé des exercices de session) ─────────────────────
 export const importedExercise = pgTable("imported_exercise", {
   id: text("id").primaryKey(),
-  importId: text("import_id")
-    .notNull()
-    .references(() => documentImport.id, { onDelete: "cascade" }),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
+  importId: text("import_id").notNull().references(() => documentImport.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
   type: exerciseTypeEnum("type").notNull(),
   level: ceferLevelEnum("level").notNull(),
   sector: sectorEnum("sector").notNull().default("QUOTIDIEN"),
@@ -255,37 +229,38 @@ export const importedExercise = pgTable("imported_exercise", {
   content: jsonb("content").notNull(),
   xpReward: integer("xp_reward").notNull().default(15),
   difficultyScore: real("difficulty_score").notNull().default(0.5),
-  isGenerated: boolean("is_generated").notNull().default(false), // true = généré "dans le même sens"
+  isGenerated: boolean("is_generated").notNull().default(false),
   orderIndex: integer("order_index").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, (t) => [
+  index("imported_ex_import_id_idx").on(t.importId),
+  index("imported_ex_user_id_idx").on(t.userId),
+  index("imported_ex_import_order_idx").on(t.importId, t.orderIndex),
+]);
 
-// ─── Imported Exercise Result ─────────────────────────────────────────────────
 export const importedExerciseResult = pgTable("imported_exercise_result", {
   id: text("id").primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-  importedExerciseId: text("imported_exercise_id")
-    .notNull()
-    .references(() => importedExercise.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  importedExerciseId: text("imported_exercise_id").notNull().references(() => importedExercise.id, { onDelete: "cascade" }),
   score: real("score").notNull(),
   timeSpentSeconds: integer("time_spent_seconds").notNull().default(0),
   completedAt: timestamp("completed_at").notNull().defaultNow(),
-});
+}, (t) => [
+  index("imported_ex_result_user_idx").on(t.userId),
+  uniqueIndex("imported_ex_result_user_ex_idx").on(t.userId, t.importedExerciseId),
+]);
 
-// ─── Level Test Attempt ───────────────────────────────────────────────────────
 export const levelTestAttempt = pgTable("level_test_attempt", {
   id: text("id").primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
   fromLevel: ceferLevelEnum("from_level").notNull(),
   toLevel: ceferLevelEnum("to_level").notNull(),
-  status: text("status").notNull().default("pending"), // pending | passed | failed
+  status: text("status").notNull().default("pending"),
   score: real("score"),
   exerciseIds: jsonb("exercise_ids").notNull().default([]),
   results: jsonb("results").notNull().default([]),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   completedAt: timestamp("completed_at"),
-});
+}, (t) => [
+  index("level_test_user_idx").on(t.userId),
+]);

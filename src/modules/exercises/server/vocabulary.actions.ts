@@ -1,42 +1,50 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { exercise, spacedRepetition } from "@/lib/db/schema";
+import { exercise, spacedRepetition, wordDetailCache } from "@/lib/db/schema";
 import { assertAuth } from "@/lib/session";
-import { generateExercise } from "@/lib/ai/exercise-generator";
 import { parseAIJson } from "@/lib/ai/parse";
-import { anthropic, AI_MODEL, SYSTEM_PROMPT_BASE } from "@/lib/ai/client";
-import { eq, and, desc } from "drizzle-orm";
+import { aiChat, SYSTEM_PROMPT_BASE } from "@/lib/ai/client";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import type { CEFRLevel, Sector } from "@/types";
 
-export async function getVocabulary() {
+const PAGE_SIZE = 20;
+
+export async function getVocabulary(page = 1) {
   const session = await assertAuth();
   const uid = session.user.id;
+  const offset = (page - 1) * PAGE_SIZE;
 
-  // Tous les VOCAB_FLASHCARD liés à cet utilisateur via SM-2
-  const rows = await db
-    .select({ exercise, sr: spacedRepetition })
-    .from(spacedRepetition)
-    .innerJoin(exercise, eq(spacedRepetition.exerciseId, exercise.id))
-    .where(and(eq(spacedRepetition.userId, uid), eq(exercise.type, "VOCAB_FLASHCARD")))
-    .orderBy(desc(spacedRepetition.updatedAt));
+  const [rows, countResult] = await Promise.all([
+    db
+      .select({ exercise, sr: spacedRepetition })
+      .from(spacedRepetition)
+      .innerJoin(exercise, eq(spacedRepetition.exerciseId, exercise.id))
+      .where(and(eq(spacedRepetition.userId, uid), eq(exercise.type, "VOCAB_FLASHCARD")))
+      .orderBy(desc(spacedRepetition.updatedAt))
+      .limit(PAGE_SIZE)
+      .offset(offset),
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(spacedRepetition)
+      .innerJoin(exercise, eq(spacedRepetition.exerciseId, exercise.id))
+      .where(and(eq(spacedRepetition.userId, uid), eq(exercise.type, "VOCAB_FLASHCARD"))),
+  ]);
 
+  const total = Number(countResult[0]?.count ?? 0);
   const now = new Date();
 
-  return rows.map((r) => {
+  const words = rows.map((r) => {
     const content = r.exercise.content as {
       word?: string; article?: string; translation?: string;
       exampleSentence?: string; exampleTranslation?: string; tags?: string[];
     };
-
     const isDue = new Date(r.sr.nextReviewAt) <= now;
-    const mastery = r.sr.repetitions >= 5 && r.sr.easeFactor >= 2.3
-      ? "mastered"
-      : r.sr.repetitions >= 2
-      ? "learning"
+    const mastery =
+      r.sr.repetitions >= 5 && r.sr.easeFactor >= 2.3 ? "mastered"
+      : r.sr.repetitions >= 2 ? "learning"
       : "new";
-
     return {
       srId: r.sr.id,
       exerciseId: r.exercise.id,
@@ -56,6 +64,14 @@ export async function getVocabulary() {
       nextReviewAt: r.sr.nextReviewAt,
     };
   });
+
+  return {
+    words,
+    total,
+    page,
+    pageSize: PAGE_SIZE,
+    totalPages: Math.ceil(total / PAGE_SIZE),
+  };
 }
 
 export async function generateVocabWords(params: {
@@ -67,48 +83,140 @@ export async function generateVocabWords(params: {
   const uid = session.user.id;
   const { sector, level, count = 5 } = params;
 
-  const generated = await Promise.all(
-    Array.from({ length: count }, (_, i) =>
-      generateExercise({
-        type: "VOCAB_FLASHCARD",
-        level,
-        sector,
-        skill: "WORTSCHATZ",
-        topic: `mot ${i + 1} sur ${count} — choisis un mot différent des précédents, varié et utile pour le secteur`,
-      })
-    )
+  const existingRows = await db
+    .select({ content: exercise.content })
+    .from(spacedRepetition)
+    .innerJoin(exercise, eq(spacedRepetition.exerciseId, exercise.id))
+    .where(and(eq(spacedRepetition.userId, uid), eq(exercise.type, "VOCAB_FLASHCARD")));
+
+  const existingWords = existingRows
+    .map((r) => (r.content as { word?: string }).word ?? "")
+    .filter(Boolean);
+
+  const exclusionBlock =
+    existingWords.length > 0
+      ? `\nMots déjà dans le vocabulaire de l'utilisateur (NE PAS répéter) :\n${existingWords.join(", ")}\n`
+      : "";
+
+  const LEVEL_HINTS: Record<CEFRLevel, string> = {
+    A0: "mots très basiques : chiffres, couleurs, salutations, famille, objets du quotidien",
+    A1: "mots courants : nourriture, transport, logement, achats, corps humain",
+    A2: "mots intermédiaires : travail, santé, loisirs, météo, sentiments",
+    B1: "mots variés : opinions, actualités, relations professionnelles, voyages",
+    B2: "mots avancés : nuances, expressions idiomatiques, vocabulaire technique",
+    C1: "mots soutenus : registres formels, expressions abstraites, termes spécialisés",
+    C2: "mots sophistiqués : termes rares, proverbes, registre littéraire, argot cultivé",
+  };
+
+  const prompt = `${SYSTEM_PROMPT_BASE}
+
+Génère exactement ${count} mots de vocabulaire allemand pour un apprenant de niveau ${level}, secteur ${sector}.
+Domaine : ${LEVEL_HINTS[level]}.
+${exclusionBlock}
+Règles absolues :
+- Chaque mot doit être UNIQUE et différent des mots existants listés ci-dessus
+- Varie les catégories grammaticales (Nomen, Verb, Adjektiv, Adverb, Phrase)
+- Varie les thèmes au sein du secteur ${sector}
+- Pour chaque mot, génère IMMÉDIATEMENT tous ses détails complets (définition, phrases, synonymes)
+  afin qu'aucun appel API supplémentaire ne soit nécessaire
+
+Réponds UNIQUEMENT avec un tableau JSON de ${count} objets :
+[
+  {
+    "word": "le mot allemand",
+    "article": "der/die/das ou null si pas un nom",
+    "translation": "traduction française courte",
+    "exampleSentence": "une phrase d'exemple en allemand (niveau ${level})",
+    "exampleTranslation": "traduction française de la phrase",
+    "wordType": "Nomen|Verb|Adjektiv|Adverb|Präposition|Konjunktion|Phrase",
+    "tags": ["tag1", "tag2"],
+    "difficultyScore": 0.5,
+    "definitionDe": "définition en allemand simple (2-3 phrases, niveau ${level})",
+    "definitionFr": "traduction courte de la définition en français",
+    "plural": "forme plurielle si nom, sinon null",
+    "sentences": [
+      { "de": "phrase en allemand", "fr": "traduction", "context": "contexte court" },
+      { "de": "phrase en allemand", "fr": "traduction", "context": "contexte court" },
+      { "de": "phrase en allemand", "fr": "traduction", "context": "contexte court" },
+      { "de": "phrase en allemand", "fr": "traduction", "context": "contexte court" },
+      { "de": "phrase en allemand", "fr": "traduction", "context": "contexte court" },
+      { "de": "phrase en allemand", "fr": "traduction", "context": "contexte court" },
+      { "de": "phrase en allemand", "fr": "traduction", "context": "contexte court" },
+      { "de": "phrase en allemand", "fr": "traduction", "context": "contexte court" },
+      { "de": "phrase en allemand", "fr": "traduction", "context": "contexte court" },
+      { "de": "phrase en allemand", "fr": "traduction", "context": "contexte court" }
+    ],
+    "synonyms": ["synonyme1", "synonyme2"],
+    "antonyms": ["antonyme1"],
+    "tip": "astuce mémo ou règle grammaticale en français (1 phrase)"
+  }
+]`;
+
+  const raw = await aiChat("vocab_gen", [{ role: "user", content: prompt }], 4000);
+  const generated = await parseAIJson<Array<{
+    word: string; article: string | null; translation: string;
+    exampleSentence: string; exampleTranslation: string;
+    wordType: string; tags: string[]; difficultyScore: number;
+    definitionDe: string; definitionFr: string; plural: string | null;
+    sentences: Array<{ de: string; fr: string; context: string }>;
+    synonyms: string[]; antonyms: string[]; tip: string | null;
+  }>>(raw);
+
+  const deduped = generated.filter(
+    (g, i, arr) =>
+      !existingWords.includes(g.word) &&
+      arr.findIndex((x) => x.word === g.word) === i
   );
 
-  const saved = await Promise.all(
-    generated.map(async ({ content, difficultyScore, xpReward }) => {
-      const [ex] = await db.insert(exercise).values({
-        id: nanoid(),
-        type: "VOCAB_FLASHCARD",
-        level,
-        sector,
-        skill: "WORTSCHATZ",
-        content: content as never,
-        difficultyScore,
-        xpReward,
-        isAiGenerated: true,
-      }).returning();
+  let saved = 0;
+  for (const item of deduped) {
+    const [ex] = await db.insert(exercise).values({
+      id: nanoid(),
+      type: "VOCAB_FLASHCARD",
+      level,
+      sector,
+      skill: "WORTSCHATZ",
+      content: {
+        word: item.word,
+        article: item.article,
+        translation: item.translation,
+        exampleSentence: item.exampleSentence,
+        exampleTranslation: item.exampleTranslation,
+        wordType: item.wordType,
+        tags: item.tags,
+        synonyms: item.synonyms,
+      } as never,
+      difficultyScore: item.difficultyScore ?? 0.5,
+      xpReward: 10,
+      isAiGenerated: true,
+    }).returning();
 
-      // Créer l'entrée SM-2 immédiatement (due maintenant)
-      await db.insert(spacedRepetition).values({
-        id: nanoid(),
-        userId: uid,
-        exerciseId: ex.id,
-        easeFactor: 2.5,
-        interval: 1,
-        repetitions: 0,
-        nextReviewAt: new Date(),
-      });
+    await db.insert(spacedRepetition).values({
+      id: nanoid(),
+      userId: uid,
+      exerciseId: ex.id,
+      easeFactor: 2.5,
+      interval: 1,
+      repetitions: 0,
+      nextReviewAt: new Date(),
+    });
 
-      return ex;
-    })
-  );
+    await db.insert(wordDetailCache).values({
+      exerciseId: ex.id,
+      definitionDe: item.definitionDe,
+      definitionFr: item.definitionFr,
+      wordType: item.wordType,
+      plural: item.plural ?? null,
+      sentences: item.sentences as never,
+      synonyms: item.synonyms as never,
+      antonyms: item.antonyms as never,
+      tip: item.tip ?? null,
+    });
 
-  return saved.length;
+    saved++;
+  }
+
+  return saved;
 }
 
 export async function getWordDetail(exerciseId: string) {
@@ -134,20 +242,18 @@ export async function getWordDetail(exerciseId: string) {
   const level = row.exercise.level;
   const sector = row.exercise.sector;
 
-  // ── Vérifier le cache avant d'appeler l'IA ────────────────────────────────
-  const { wordDetailCache } = await import("@/lib/db/schema");
   const cached = await db.query.wordDetailCache.findFirst({
     where: (c, { eq }) => eq(c.exerciseId, exerciseId),
   });
 
   let detail: {
     definitionDe: string; definitionFr: string; wordType: string;
-    plural: string | null; sentences: Array<{ de: string; fr: string; context: string }>;
+    plural: string | null;
+    sentences: Array<{ de: string; fr: string; context: string }>;
     synonyms: string[]; antonyms: string[]; tip: string;
   };
 
   if (cached) {
-    // Utiliser le cache
     detail = {
       definitionDe: cached.definitionDe,
       definitionFr: cached.definitionFr,
@@ -159,42 +265,28 @@ export async function getWordDetail(exerciseId: string) {
       tip: cached.tip ?? "",
     };
   } else {
-    // Générer via l'IA et mettre en cache
     const prompt = `${SYSTEM_PROMPT_BASE}
 
-Pour le mot allemand "${article ? article + " " : ""}${word}" (niveau ${level}, secteur ${sector}), génère:
+Pour le mot allemand "${article ? article + " " : ""}${word}" (niveau ${level}, secteur ${sector}), génère tous les détails.
 
-Réponds UNIQUEMENT en JSON valide:
+Réponds UNIQUEMENT en JSON valide :
 {
-  "definitionDe": "définition en allemand simple et claire (2-3 phrases, adapté au niveau ${level})",
-  "definitionFr": "traduction courte de la définition en français (1-2 phrases)",
-  "wordType": "Nomen / Verb / Adjektiv / Adverb / Präposition",
-  "plural": "forme plurielle si nom (ex: die Sicherheitslücken), sinon null",
+  "definitionDe": "définition en allemand simple (2-3 phrases, niveau ${level})",
+  "definitionFr": "traduction courte en français",
+  "wordType": "Nomen|Verb|Adjektiv|Adverb|Präposition|Konjunktion|Phrase",
+  "plural": "forme plurielle si nom, sinon null",
   "sentences": [
-    {
-      "de": "phrase en allemand utilisant le mot naturellement",
-      "fr": "traduction française",
-      "context": "contexte court en français (ex: email professionnel, réunion)"
-    }
+    { "de": "phrase", "fr": "traduction", "context": "contexte" }
   ],
-  "synonyms": ["synonyme1 en allemand", "synonyme2"],
-  "antonyms": ["antonyme1 en allemand"],
-  "tip": "astuce mémo ou règle grammaticale en allemand simple (1 phrase)"
+  "synonyms": ["synonyme1"],
+  "antonyms": ["antonyme1"],
+  "tip": "astuce mémo en français (1 phrase)"
 }
+Génère exactement 10 phrases variées.`;
 
-Génère exactement 10 phrases variées couvrant différents contextes du secteur ${sector}.
-IMPORTANT: La définition principale doit être EN ALLEMAND, accessible pour un niveau ${level}.`;
-
-    const response = await anthropic.messages.create({
-      model: AI_MODEL,
-      max_tokens: 2000,
-      messages: [{ role: "user", content: prompt }],
-    });
-
-    const raw = (response.content[0] as { type: string; text: string }).text;
+    const raw = await aiChat("word_detail", [{ role: "user", content: prompt }], 2000);
     detail = parseAIJson(raw);
 
-    // Sauvegarder en cache
     await db.insert(wordDetailCache).values({
       exerciseId,
       definitionDe: detail.definitionDe,
@@ -212,7 +304,7 @@ IMPORTANT: La définition principale doit être EN ALLEMAND, accessible pour un 
     exerciseId: row.exercise.id,
     srId: row.sr.id,
     word,
-    article: article as string | null,
+    article,
     translation: content.translation ?? "",
     exampleSentence: content.exampleSentence ?? "",
     exampleTranslation: content.exampleTranslation ?? "",
@@ -220,7 +312,10 @@ IMPORTANT: La définition principale doit être EN ALLEMAND, accessible pour un 
     tags: content.tags ?? [],
     sector: row.exercise.sector,
     level: row.exercise.level,
-    mastery: row.sr.repetitions >= 5 ? "mastered" : row.sr.repetitions >= 2 ? "learning" : "new",
+    mastery:
+      row.sr.repetitions >= 5 ? "mastered"
+      : row.sr.repetitions >= 2 ? "learning"
+      : "new",
     interval: row.sr.interval,
     repetitions: row.sr.repetitions,
     definitionDe: detail.definitionDe,

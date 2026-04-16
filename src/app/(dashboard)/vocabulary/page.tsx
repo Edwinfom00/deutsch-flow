@@ -8,13 +8,13 @@ import { eq } from "drizzle-orm";
 
 async function VocabContent() {
   const session = await requireAuth();
-  const [words, profile] = await Promise.all([
-    getVocabulary(),
+  const [data, profile] = await Promise.all([
+    getVocabulary(1),
     db.query.userProfile.findFirst({ where: eq(userProfile.userId, session.user.id) }),
   ]);
   return (
     <VocabularyPage
-      words={words}
+      initialData={data}
       level={profile?.level ?? "A0"}
       sector={profile?.sector ?? "QUOTIDIEN"}
     />
@@ -31,8 +31,8 @@ function VocabSkeleton() {
         </div>
         <div className="h-9 w-36 bg-gray-200 rounded-md" />
       </div>
-      <div className="grid grid-cols-3 gap-3">
-        {[0,1,2].map(i => <div key={i} className="h-20 bg-white border border-gray-100 rounded-md" />)}
+      <div className="grid grid-cols-4 gap-3">
+        {[0,1,2,3].map(i => <div key={i} className="h-20 bg-white border border-gray-100 rounded-md" />)}
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
         {Array.from({length: 8}).map((_, i) => <div key={i} className="h-28 bg-white border border-gray-100 rounded-md" />)}

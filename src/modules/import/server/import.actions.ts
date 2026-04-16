@@ -5,6 +5,20 @@ import { documentImport, exercise, spacedRepetition } from "@/lib/db/schema";
 import { assertAuth } from "@/lib/session";
 import { eq, desc, and, inArray } from "drizzle-orm";
 
+export async function deleteImport(importId: string) {
+  const session = await assertAuth();
+  const uid = session.user.id;
+
+  const imp = await db.query.documentImport.findFirst({
+    where: and(eq(documentImport.id, importId), eq(documentImport.userId, uid)),
+  });
+  if (!imp) throw new Error("Import introuvable");
+
+  await db.delete(documentImport).where(
+    and(eq(documentImport.id, importId), eq(documentImport.userId, uid))
+  );
+}
+
 export async function getImports() {
   const session = await assertAuth();
   const uid = session.user.id;

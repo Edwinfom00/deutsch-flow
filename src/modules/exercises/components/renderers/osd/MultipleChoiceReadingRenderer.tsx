@@ -103,7 +103,7 @@ export function MultipleChoiceReadingRenderer({ exercise, onAnswer, answered }: 
                       {Array.isArray(exercise.readingText.glossary) ? (
                         <div className="grid grid-cols-2 gap-1">
                           {(exercise.readingText.glossary as Array<{ word: string; translation: string }>).map((g, i) => (
-                            <div key={i} className="flex items-start gap-1.5 text-xs">
+                            <div key={`gloss-${i}-${g.word}`} className="flex items-start gap-1.5 text-xs">
                               <span className="font-semibold text-gray-700 shrink-0">{g.word}</span>
                               <span className="text-gray-400">— {g.translation}</span>
                             </div>
@@ -128,7 +128,7 @@ export function MultipleChoiceReadingRenderer({ exercise, onAnswer, answered }: 
           <p className="text-sm text-blue-900 font-medium">{exercise.example.questionText}</p>
           <div className="flex gap-2">
             {(["A","B","C"] as const).map((opt) => (
-              <div key={opt} className={cn(
+              <div key={`ex-opt-${opt}`} className={cn(
                 "flex items-start gap-1.5 px-2.5 py-1.5 rounded-md border text-xs",
                 opt === exercise.example!.correctAnswer
                   ? "border-blue-400 bg-blue-100 text-blue-800 font-semibold"
@@ -153,7 +153,7 @@ export function MultipleChoiceReadingRenderer({ exercise, onAnswer, answered }: 
           const isWrong = answered && selected && selected !== q.correctAnswer;
 
           return (
-            <motion.div key={q.number} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+            <motion.div key={`q-${q.number}-${i}`} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.06 }}
               className={cn("border rounded-md p-4 space-y-3",
                 isCorrect && "border-emerald-200 bg-emerald-50",

@@ -11,13 +11,8 @@ import type { CEFRLevel } from "@/types";
 
 const LEVEL_ORDER: CEFRLevel[] = ["A0", "A1", "A2", "B1", "B2", "C1", "C2"];
 
-const XP_THRESHOLDS: Record<CEFRLevel, number> = {
-  A0: 200, A1: 500, A2: 800, B1: 1200, B2: 1800, C1: 2500, C2: Infinity,
-};
-
-// XP cumulatif pour atteindre chaque niveau depuis le départ
-const CUMULATIVE_XP: Record<CEFRLevel, number> = {
-  A0: 0, A1: 200, A2: 500, B1: 800, B2: 1200, C1: 1800, C2: 2500,
+const XP_PER_LEVEL: Record<CEFRLevel, number> = {
+  A0: 200, A1: 500, A2: 800, B1: 1200, B2: 1800, C1: 2500, C2: 9999,
 };
 
 const SKILL_LABELS: Record<string, string> = {
@@ -66,6 +61,13 @@ export async function getAnalyticsData() {
   const level = (profile?.level ?? "A0") as CEFRLevel;
   const levelIndex = LEVEL_ORDER.indexOf(level);
 
+  const nextLevel = levelIndex < LEVEL_ORDER.length - 1 ? LEVEL_ORDER[levelIndex + 1] : null;
+  const xpForLevel = XP_PER_LEVEL[level];
+  const xpInLevel = totalXp % xpForLevel;
+  const xpNeededForNext = xpForLevel;
+  const xpProgressPct = Math.min(Math.round((xpInLevel / xpForLevel) * 100), 100);
+
+  // ── Métriques globales ────────────────────────────────────────────────────
   const totalSessions = sessions90.length;
   const totalExercises = sessions90.reduce((s, r) => s + r.exercisesCompleted, 0);
   const totalTimeSeconds = sessions90.reduce((s, r) => s + r.timeSpentSeconds, 0);
@@ -73,29 +75,31 @@ export async function getAnalyticsData() {
     ? Math.round(skills.reduce((s, k) => s + k.avgScore, 0) / skills.length)
     : 0;
 
-  // ── Calcul de la vitesse de progression ──────────────────────────────────
-  // jours actifs sur les 30 derniers jours
+  // ── Vitesse de progression ────────────────────────────────────────────────
   const activeDays30 = sessions30.filter((s) => s.xpEarned > 0).length;
   const totalXp30 = sessions30.reduce((s, r) => s + r.xpEarned, 0);
   const avgDailyXp = activeDays30 > 0 ? totalXp30 / activeDays30 : 0;
 
-  // XP restant pour le prochain niveau
-  const nextLevel = levelIndex < LEVEL_ORDER.length - 1 ? LEVEL_ORDER[levelIndex + 1] : null;
-  const xpCurrentLevel = CUMULATIVE_XP[level];
-  const xpNextLevel = nextLevel ? CUMULATIVE_XP[nextLevel] : null;
-  const xpInLevel = Math.max(0, totalXp - xpCurrentLevel);
-  const xpNeededForNext = xpNextLevel !== null ? xpNextLevel - xpCurrentLevel : null;
-  const xpProgressPct = xpNeededForNext
-    ? Math.min(Math.round((xpInLevel / xpNeededForNext) * 100), 100)
-    : 100;
-
-  // Estimation date d'examen (niveau cible = B1 = niveau recommandé pour 1er examen Goethe)
+  // ── Estimation date d'examen ──────────────────────────────────────────────
   let examEstimate: { level: CEFRLevel; daysLeft: number; date: string } | null = null;
   const TARGET_EXAM_LEVEL: CEFRLevel = levelIndex >= LEVEL_ORDER.indexOf("B1") ? "B2" : "B1";
-  const xpForTarget = CUMULATIVE_XP[TARGET_EXAM_LEVEL];
 
-  if (avgDailyXp > 0 && totalXp < xpForTarget) {
-    const xpMissing = xpForTarget - totalXp;
+  // XP cumulatif pour atteindre le niveau cible
+  const xpCumulative: Record<CEFRLevel, number> = {
+    A0: 0,
+    A1: XP_PER_LEVEL["A0"],
+    A2: XP_PER_LEVEL["A0"] + XP_PER_LEVEL["A1"],
+    B1: XP_PER_LEVEL["A0"] + XP_PER_LEVEL["A1"] + XP_PER_LEVEL["A2"],
+    B2: XP_PER_LEVEL["A0"] + XP_PER_LEVEL["A1"] + XP_PER_LEVEL["A2"] + XP_PER_LEVEL["B1"],
+    C1: XP_PER_LEVEL["A0"] + XP_PER_LEVEL["A1"] + XP_PER_LEVEL["A2"] + XP_PER_LEVEL["B1"] + XP_PER_LEVEL["B2"],
+    C2: XP_PER_LEVEL["A0"] + XP_PER_LEVEL["A1"] + XP_PER_LEVEL["A2"] + XP_PER_LEVEL["B1"] + XP_PER_LEVEL["B2"] + XP_PER_LEVEL["C1"],
+  };
+
+  const xpForTarget = xpCumulative[TARGET_EXAM_LEVEL];
+  const xpTotalCumulative = xpCumulative[level] + xpInLevel;
+
+  if (avgDailyXp > 0 && xpTotalCumulative < xpForTarget) {
+    const xpMissing = xpForTarget - xpTotalCumulative;
     const daysLeft = Math.ceil(xpMissing / avgDailyXp);
     const targetDate = new Date(Date.now() + daysLeft * 86400000);
     examEstimate = {

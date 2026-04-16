@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Upload, FileCheck, GraduationCap, BookOpen,
-  CheckCircle2, XCircle, Loader2, AlertCircle, Brain,
+  CheckCircle2, XCircle, Loader2, AlertCircle, Brain, Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useConfirm } from "@/hooks/use-confirm";
 import type { getImports } from "../../server/import.actions";
 
 type ImportRecord = Awaited<ReturnType<typeof getImports>>[number];
@@ -94,6 +95,8 @@ export function UploadTab({ initialImports }: { initialImports: ImportRecord[] }
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [analyzingFile, setAnalyzingFile] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [, startTransition] = useTransition();
+  const { confirm, ConfirmDialog } = useConfirm();
 
   useEffect(() => {
     const processing = imports.filter(i => i.status === "pending" || i.status === "processing");
@@ -130,8 +133,26 @@ export function UploadTab({ initialImports }: { initialImports: ImportRecord[] }
     const file = e.dataTransfer.files[0]; if (file) handleFile(file);
   }, [handleFile]);
 
+  const handleDelete = useCallback(async (imp: ImportRecord) => {
+    const confirmed = await confirm({
+      title: "Supprimer ce document ?",
+      description: `"${imp.fileName}" et tous ses exercices associés seront définitivement supprimés. Cette action est irréversible.`,
+      confirmLabel: "Supprimer",
+      cancelLabel: "Annuler",
+      variant: "destructive",
+    });
+    if (!confirmed) return;
+
+    startTransition(async () => {
+      const { deleteImport } = await import("../../server/import.actions");
+      await deleteImport(imp.id);
+      setImports((prev) => prev.filter((i) => i.id !== imp.id));
+    });
+  }, [confirm]);
+
   return (
     <div className="space-y-5">
+      <ConfirmDialog />
       {/* Types */}
       <div className="grid grid-cols-3 gap-3">
         {(["exercises", "modellsatz", "grammar"] as const).map((key, i) => {
@@ -236,10 +257,19 @@ export function UploadTab({ initialImports }: { initialImports: ImportRecord[] }
                         {formatSize(imp.fileSize)} · {new Date(imp.createdAt).toLocaleDateString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                       </p>
                     </div>
-                    <div className="shrink-0 mt-0.5">
+                    <div className="flex items-center gap-2 shrink-0 mt-0.5">
                       {isProcessing && <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}><Loader2 className="h-4 w-4 text-blue-400" /></motion.div>}
                       {imp.status === "done" && <CheckCircle2 className="h-4 w-4 text-emerald-500" />}
                       {imp.status === "error" && <XCircle className="h-4 w-4 text-red-400" />}
+                      {!isProcessing && (
+                        <button
+                          onClick={() => handleDelete(imp)}
+                          title="Supprimer ce document"
+                          className="h-6 w-6 rounded-md flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                     </div>
                   </div>
                   {isProcessing && (
@@ -260,7 +290,13 @@ export function UploadTab({ initialImports }: { initialImports: ImportRecord[] }
                     </motion.div>
                   )}
                   {imp.status === "error" && imp.errorMessage && (
-                    <p className="ml-11 text-xs text-red-500">{imp.errorMessage}</p>
+                    <div className="ml-11 flex items-start gap-2 bg-red-50 border border-red-200 rounded-md px-3 py-2">
+                      <AlertCircle className="h-3.5 w-3.5 text-red-500 shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-red-700">Traitement échoué</p>
+                        <p className="text-[11px] text-red-500 mt-0.5 leading-relaxed">{imp.errorMessage}</p>
+                      </div>
+                    </div>
                   )}
                 </motion.div>
               );

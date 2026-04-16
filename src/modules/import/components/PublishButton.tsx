@@ -110,7 +110,7 @@ export function PublishButton({ importId, isPublic: initialPublic, level, onTogg
         )}
       >
         {isPublic ? <Globe className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
-        {isPublic ? "Public" : "Privé"}
+        <span className="hidden sm:inline">{isPublic ? "Public" : "Privé"}</span>
       </button>
 
       <DialogContent showCloseButton={status === "idle"} className="max-w-sm overflow-hidden">

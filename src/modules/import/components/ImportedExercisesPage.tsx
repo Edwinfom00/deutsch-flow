@@ -2,7 +2,8 @@
 
 import { useState, useTransition, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FileCheck, ArrowRight, X, Zap, CheckCircle2, RotateCcw, ChevronDown } from "lucide-react";
+import { FileCheck, ArrowRight, X, Zap, CheckCircle2, RotateCcw, ChevronDown, Trash2 } from "lucide-react";
+import { useConfirm } from "@/hooks/use-confirm";
 import { ExerciseRenderer } from "@/modules/exercises/components/ExerciseRenderer";
 import { submitImportedExerciseResult } from "../server/imported-content.actions";
 import { SKILL_LABELS } from "@/types";
@@ -33,22 +34,38 @@ function sanitizeContent(obj: unknown): unknown {
   return String(obj);
 }
 
-export function ImportedExercisesPage({ data }: { data: Data }) {
+export function ImportedExercisesPage({ data: initialData }: { data: Data }) {
+  const [data, setData] = useState<Data>(initialData);
   const [selectedGroup, setSelectedGroup] = useState<ImportGroup | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [phase, setPhase] = useState<"list" | "playing" | "done">("list");
   const [results, setResults] = useState<Array<{ id: string; score: number; xp: number }>>([]);
   const [isPending, startTransition] = useTransition();
+  const { confirm, ConfirmDialog } = useConfirm();
 
   const current = selectedGroup?.exercises[currentIndex];
 
   const handleStart = (group: ImportGroup) => {
     setSelectedGroup(group);
-    // Reprendre au premier exercice non complété
     const firstIncomplete = group.exercises.findIndex((e) => !e.completed);
     setCurrentIndex(firstIncomplete === -1 ? 0 : firstIncomplete);
     setResults([]);
     setPhase("playing");
+  };
+
+  const handleDelete = async (group: ImportGroup) => {
+    const ok = await confirm({
+      title: "Supprimer ces exercices ?",
+      description: `"${group.fileName}" et tous ses exercices seront définitivement supprimés.`,
+      confirmLabel: "Supprimer",
+      variant: "destructive",
+    });
+    if (!ok) return;
+    startTransition(async () => {
+      const { deleteImport } = await import("../server/import.actions");
+      await deleteImport(group.importId);
+      setData((prev) => prev.filter((g) => g.importId !== group.importId));
+    });
   };
 
   const [isNavigating, setIsNavigating] = useState(false);
@@ -125,7 +142,7 @@ export function ImportedExercisesPage({ data }: { data: Data }) {
     return (
       <div className="min-h-[calc(100vh-52px)] bg-white flex flex-col">
         <div className="flex items-center gap-4 px-5 h-12 border-b border-gray-100 sticky top-0 bg-white z-10">
-          <button onClick={() => setPhase("list")} className="text-gray-300 hover:text-gray-600 transition-colors">
+          <button onClick={() => setPhase("list")} className="cursor-pointer text-gray-300 hover:text-gray-600 transition-colors">
             <X className="h-4 w-4" />
           </button>
           <div className="flex-1 h-1 bg-gray-100 rounded-sm overflow-hidden">
@@ -151,6 +168,7 @@ export function ImportedExercisesPage({ data }: { data: Data }) {
                 <ExerciseRenderer
                   exercise={sanitizeContent({ ...(current.content as object), level: current.level, skill: current.skill, xpReward: current.xpReward }) as ExerciseContent}
                   onComplete={handleComplete}
+                  hideHeader
                 />
               </motion.div>
             </AnimatePresence>
@@ -164,6 +182,7 @@ export function ImportedExercisesPage({ data }: { data: Data }) {
   // ── Liste ─────────────────────────────────────────────────────────────────
   return (
     <div className="p-5 max-w-5xl mx-auto space-y-5">
+      <ConfirmDialog />
       <div>
         <h1 className="text-[15px] font-semibold text-gray-900">Exercices importés</h1>
         <p className="text-xs text-gray-400 mt-0.5">Exercices extraits de tes PDF + exercices générés dans le même style</p>
@@ -178,7 +197,7 @@ export function ImportedExercisesPage({ data }: { data: Data }) {
       ) : (
         <div className="space-y-3">
           {data.map((group, gi) => (
-            <ImportGroupCard key={group.importId} group={group} index={gi} onStart={handleStart} />
+            <ImportGroupCard key={group.importId} group={group} index={gi} onStart={handleStart} onDelete={handleDelete} />
           ))}
         </div>
       )}
@@ -186,7 +205,12 @@ export function ImportedExercisesPage({ data }: { data: Data }) {
   );
 }
 
-function ImportGroupCard({ group, index, onStart }: { group: ImportGroup; index: number; onStart: (g: ImportGroup) => void; }) {
+function ImportGroupCard({ group, index, onStart, onDelete }: {
+  group: ImportGroup;
+  index: number;
+  onStart: (g: ImportGroup) => void;
+  onDelete: (g: ImportGroup) => void;
+}) {
   const [expanded, setExpanded] = useState(index === 0);
   const done = group.exercises.filter((e) => e.completed).length;
   const total = group.exercises.length;
@@ -210,14 +234,20 @@ function ImportGroupCard({ group, index, onStart }: { group: ImportGroup; index:
             <span className="text-[10px] text-gray-400">{done}/{total}</span>
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
           <PublishButton importId={group.importId} isPublic={group.isPublic} level={group.level} />
           <button onClick={() => onStart(group)}
-            className="flex items-center gap-1.5 h-8 px-3 bg-gray-900 hover:bg-gray-800 text-white text-xs font-semibold rounded-md transition-colors">
-            {done === total && total > 0 ? <><RotateCcw className="h-3.5 w-3.5" />Refaire</> : <><ArrowRight className="h-3.5 w-3.5" />Commencer</>}
+            className="cursor-pointer flex items-center gap-1.5 h-8 px-2.5 bg-gray-900 hover:bg-gray-800 text-white text-xs font-semibold rounded-md transition-colors">
+            {done === total && total > 0
+              ? <><RotateCcw className="h-3.5 w-3.5" /><span className="hidden sm:inline">Refaire</span></>
+              : <><ArrowRight className="h-3.5 w-3.5" /><span className="hidden sm:inline">Commencer</span></>}
           </button>
-          <button onClick={() => setExpanded(!expanded)} className="text-gray-300 hover:text-gray-600 transition-colors">
+          <button onClick={() => setExpanded(!expanded)} className="cursor-pointer h-8 w-8 rounded-md flex items-center justify-center text-gray-300 hover:text-gray-600 hover:bg-gray-50 transition-colors">
             <ChevronDown className={cn("h-4 w-4 transition-transform", expanded && "rotate-180")} />
+          </button>
+          <button onClick={() => onDelete(group)} title="Supprimer"
+            className="cursor-pointer h-8 w-8 rounded-md flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all">
+            <Trash2 className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>

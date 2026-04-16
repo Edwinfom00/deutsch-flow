@@ -1,7 +1,7 @@
 "use server";
 
 import { parseAIJson } from "@/lib/ai/parse";
-import { anthropic, AI_MODEL, SYSTEM_PROMPT_BASE } from "@/lib/ai/client";
+import { aiChat, SYSTEM_PROMPT_BASE } from "@/lib/ai/client";
 import { assertAuth } from "@/lib/session";
 import { db } from "@/lib/db";
 import { userProfile, speakScenario } from "@/lib/db/schema";
@@ -58,13 +58,7 @@ Réponds UNIQUEMENT en JSON valide:
 
 IMPORTANT: Pas d'emojis. Opener adapté au niveau ${level} (phrases simples pour A0-A1, plus complexes pour B1+).`;
 
-  const response = await anthropic.messages.create({
-    model: AI_MODEL,
-    max_tokens: 1500,
-    messages: [{ role: "user", content: prompt }],
-  });
-
-  const raw = (response.content[0] as { type: string; text: string }).text;
+  const raw = await aiChat("speaking_chat", [{ role: "user", content: prompt }], 1500);
   const parsed = parseAIJson<Omit<Scenario, "id" | "level">[]>(raw);
   return parsed.map((s) => ({ ...s, level }));
 }
@@ -172,13 +166,7 @@ Réponds en JSON:
 
 Si la conversation a naturellement atteint sa conclusion, mets isConversationEnd à true.`;
 
-  const response = await anthropic.messages.create({
-    model: AI_MODEL,
-    max_tokens: 400,
-    messages: [{ role: "user", content: prompt }],
-  });
-
-  const raw = (response.content[0] as { type: string; text: string }).text;
+  const raw = await aiChat("speaking_chat", [{ role: "user", content: prompt }], 400);
   return parseAIJson<{ reply: string; feedback: string | null; isConversationEnd: boolean }>(raw);
 }
 
@@ -214,12 +202,6 @@ Réponds en JSON:
   "usefulPhrases": ["phrase utile pour ce scénario en allemand", "autre phrase"]
 }`;
 
-  const response = await anthropic.messages.create({
-    model: AI_MODEL,
-    max_tokens: 800,
-    messages: [{ role: "user", content: prompt }],
-  });
-
-  const raw = (response.content[0] as { type: string; text: string }).text;
+  const raw = await aiChat("speaking_eval", [{ role: "user", content: prompt }], 800);
   return parseAIJson(raw);
 }

@@ -38,7 +38,7 @@ interface Props {
 }
 
 export function OsdLueckentextRenderer({ exercise, onAnswer, answered }: Props) {
-  const [answers, setAnswers] = useState<Record<string | number, string>>({});
+  const [answers, setAnswers] = useState<Record<string, string>>({});
   const [showVocab, setShowVocab] = useState(false);
 
   const questions = exercise.questions ?? [];
@@ -50,9 +50,10 @@ export function OsdLueckentextRenderer({ exercise, onAnswer, answered }: Props) 
   // Normaliser la clé de question (questionText, question, affirmation, sentence)
   const getQuestionText = (q: Question) => q.questionText ?? q.question ?? q.affirmation ?? q.sentence ?? "";
   // Normaliser la clé numérique
-  const getKey = (q: Question, i: number): string | number => q.number ?? q.numero ?? q.id ?? i;
+  const getKey = (q: Question, i: number): string =>
+    `q-${q.number ?? q.numero ?? q.id ?? i}`;
 
-  const handleSelect = (key: string | number, value: string) => {
+  const handleSelect = (key: string, value: string) => {
     if (answered) return;
     const next = { ...answers, [key]: value };
     setAnswers(next);
@@ -86,7 +87,7 @@ export function OsdLueckentextRenderer({ exercise, onAnswer, answered }: Props) 
           {showVocab && (
             <div className="mt-2 grid grid-cols-2 gap-1.5">
               {exercise.vocabulaire_cle.map((v, i) => (
-                <div key={i} className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-md px-3 py-1.5">
+                <div key={`vocab-${i}`} className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-md px-3 py-1.5">
                   <span className="text-xs font-medium text-gray-800">{v.mot ?? v.word}</span>
                   <span className="text-[10px] text-gray-400">{v.traduction ?? v.translation}</span>
                 </div>
@@ -100,6 +101,7 @@ export function OsdLueckentextRenderer({ exercise, onAnswer, answered }: Props) 
       <div className="space-y-2.5">
         {questions.map((q, i) => {
           const key = getKey(q, i);
+          const displayNum = q.number ?? q.numero ?? q.id ?? (i + 1);
           const correct = getCorrect(q);
           const questionText = getQuestionText(q);
           const selected = answers[key];
@@ -117,7 +119,7 @@ export function OsdLueckentextRenderer({ exercise, onAnswer, answered }: Props) 
                 !answered && "border-gray-200 bg-white")}>
               <div className="flex items-start gap-2">
                 <span className="h-5 w-5 rounded-sm bg-gray-900 text-white text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">
-                  {String(key)}
+                  {String(displayNum)}
                 </span>
                 <p className="text-sm text-gray-800">{questionText}</p>
               </div>

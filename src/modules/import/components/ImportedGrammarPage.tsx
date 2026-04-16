@@ -2,7 +2,8 @@
 
 import { useState, useTransition, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { BookOpen, Volume2, Lightbulb, ArrowRight, X, CheckCircle2, ChevronRight } from "lucide-react";
+import { BookOpen, Volume2, Lightbulb, ArrowRight, X, CheckCircle2, ChevronRight, Trash2 } from "lucide-react";
+import { useConfirm } from "@/hooks/use-confirm";
 import { ExerciseRenderer } from "@/modules/exercises/components/ExerciseRenderer";
 import { submitImportedExerciseResult } from "../server/imported-content.actions";
 import type { ExerciseContent } from "@/types";
@@ -33,13 +34,15 @@ function speakDE(text: string) {
   window.speechSynthesis.speak(utt);
 }
 
-export function ImportedGrammarPage({ data }: { data: Data }) {
+export function ImportedGrammarPage({ data: initialData }: { data: Data }) {
+  const [data, setData] = useState<Data>(initialData);
   const [selectedGroup, setSelectedGroup] = useState<ImportGroup | null>(null);
   const [chapterIndex, setChapterIndex] = useState(0);
   const [exerciseIndex, setExerciseIndex] = useState(0);
   const [phase, setPhase] = useState<"list" | "chapter" | "exercises" | "done">("list");
   const [results, setResults] = useState<Array<{ score: number }>>([]);
   const [isPending, startTransition] = useTransition();
+  const { confirm, ConfirmDialog } = useConfirm();
 
   const chapters = (selectedGroup?.result?.chapters ?? []) as Chapter[];
   const currentChapter = chapters[chapterIndex];
@@ -55,6 +58,21 @@ export function ImportedGrammarPage({ data }: { data: Data }) {
     setExerciseIndex(0);
     setResults([]);
     setPhase("chapter");
+  };
+
+  const handleDelete = async (group: ImportGroup) => {
+    const ok = await confirm({
+      title: "Supprimer ce cours ?",
+      description: `"${group.fileName}" et tous ses chapitres seront définitivement supprimés.`,
+      confirmLabel: "Supprimer",
+      variant: "destructive",
+    });
+    if (!ok) return;
+    startTransition(async () => {
+      const { deleteImport } = await import("../server/import.actions");
+      await deleteImport(group.importId);
+      setData((prev) => prev.filter((g) => g.importId !== group.importId));
+    });
   };
 
   const handleStartExercises = () => setPhase("exercises");
@@ -114,7 +132,7 @@ export function ImportedGrammarPage({ data }: { data: Data }) {
     return (
       <div className="min-h-[calc(100vh-52px)] bg-white flex flex-col">
         <div className="flex items-center gap-4 px-5 h-12 border-b border-gray-100 sticky top-0 bg-white z-10">
-          <button onClick={() => setPhase("chapter")} className="text-gray-300 hover:text-gray-600 transition-colors">
+          <button onClick={() => setPhase("chapter")} className="cursor-pointer text-gray-300 hover:text-gray-600 transition-colors">
             <X className="h-4 w-4" />
           </button>
           <div className="flex-1 h-1 bg-gray-100 rounded-sm overflow-hidden">
@@ -132,6 +150,7 @@ export function ImportedGrammarPage({ data }: { data: Data }) {
                 <ExerciseRenderer
                   exercise={{ ...(currentExercise.content as object), level: currentExercise.level, skill: currentExercise.skill, xpReward: currentExercise.xpReward } as ExerciseContent}
                   onComplete={handleExerciseComplete}
+                  hideHeader
                 />
               </motion.div>
             </AnimatePresence>
@@ -148,7 +167,7 @@ export function ImportedGrammarPage({ data }: { data: Data }) {
       <div className="p-5 max-w-5xl mx-auto space-y-5">
         {/* Progress chapitres */}
         <div className="flex items-center gap-2">
-          <button onClick={() => setPhase("list")} className="text-gray-300 hover:text-gray-600 transition-colors mr-1">
+          <button onClick={() => setPhase("list")} className="cursor-pointer text-gray-300 hover:text-gray-600 transition-colors mr-1">
             <X className="h-4 w-4" />
           </button>
           {chapters.map((_, i) => (
@@ -234,6 +253,7 @@ export function ImportedGrammarPage({ data }: { data: Data }) {
   // ── Liste ─────────────────────────────────────────────────────────────────
   return (
     <div className="p-5 max-w-5xl mx-auto space-y-5">
+      <ConfirmDialog />
       <div>
         <h1 className="text-[15px] font-semibold text-gray-900">Cours de grammaire</h1>
         <p className="text-xs text-gray-400 mt-0.5">Chapitres interactifs extraits de tes livres importés</p>
@@ -264,12 +284,16 @@ export function ImportedGrammarPage({ data }: { data: Data }) {
                       <p className="text-[10px] text-gray-400 mt-0.5">{chapters.length} chapitre{chapters.length > 1 ? "s" : ""} · {done}/{group.exercises.length} exercices</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
                     <PublishButton importId={group.importId} isPublic={group.isPublic} level={group.level} />
                     <button onClick={() => handleStartGroup(group)}
-                      className="flex items-center gap-1.5 h-9 px-4 bg-gray-900 hover:bg-gray-800 text-white text-xs font-semibold rounded-md transition-colors shrink-0">
+                      className="cursor-pointer flex items-center gap-1.5 h-8 px-2.5 bg-gray-900 hover:bg-gray-800 text-white text-xs font-semibold rounded-md transition-colors">
                       <ArrowRight className="h-3.5 w-3.5" />
-                      {done > 0 ? "Continuer" : "Commencer"}
+                      <span className="hidden sm:inline">{done > 0 ? "Continuer" : "Commencer"}</span>
+                    </button>
+                    <button onClick={() => handleDelete(group)} title="Supprimer"
+                      className="cursor-pointer h-8 w-8 rounded-md flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all">
+                      <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 </div>

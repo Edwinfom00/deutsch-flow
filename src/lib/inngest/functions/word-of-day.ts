@@ -1,9 +1,9 @@
 import { inngest } from "../client";
 import { db } from "@/lib/db";
 import { wordOfDay } from "@/lib/db/schema";
-import { anthropic, AI_MODEL, SYSTEM_PROMPT_BASE } from "@/lib/ai/client";
+import { aiChat, SYSTEM_PROMPT_BASE } from "@/lib/ai/client";
 import { parseAIJson } from "@/lib/ai/parse";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import type { CEFRLevel } from "@/types";
 
@@ -19,14 +19,36 @@ const LEVEL_HINTS: Record<CEFRLevel, string> = {
   C2: "vocabulaire sophistiqué (termes rares, proverbes, registre littéraire)",
 };
 
-async function generateWordForLevel(level: CEFRLevel, date: string) {
+async function getRecentWords(level: CEFRLevel): Promise<string[]> {
+  const rows = await db
+    .select({ word: wordOfDay.word })
+    .from(wordOfDay)
+    .where(eq(wordOfDay.level, level))
+    .orderBy(desc(wordOfDay.date))
+    .limit(60);
+  return rows.map((r) => r.word);
+}
+
+async function generateWordForLevel(
+  level: CEFRLevel,
+  date: string,
+  recentWords: string[]
+) {
+  const exclusionBlock =
+    recentWords.length > 0
+      ? `\nMots déjà utilisés récemment (NE PAS répéter) :\n${recentWords.join(", ")}\n`
+      : "";
+
   const prompt = `${SYSTEM_PROMPT_BASE}
 
 Génère un "mot du jour" en allemand pour un apprenant de niveau ${level}.
 Domaine : ${LEVEL_HINTS[level]}.
-Date : ${date} (varie les mots selon la date).
+Date : ${date}.
+${exclusionBlock}
+Le mot doit être différent de tous les mots listés ci-dessus.
+Varie les catégories grammaticales (Nomen, Verb, Adjektiv, Adverb, Phrase…) et les thèmes.
 
-Réponds UNIQUEMENT en JSON valide:
+Réponds UNIQUEMENT en JSON valide :
 {
   "word": "le mot allemand",
   "article": "der/die/das (null si pas un nom)",
@@ -37,49 +59,44 @@ Réponds UNIQUEMENT en JSON valide:
   "tip": "astuce ou info culturelle en français (1 phrase, peut être null)"
 }`;
 
-  const response = await anthropic.messages.create({
-    model: AI_MODEL,
-    max_tokens: 400,
-    messages: [{ role: "user", content: prompt }],
-  });
-
-  const raw = (response.content[0] as { type: string; text: string }).text;
-  return parseAIJson<{
-    word: string; article: string | null; translation: string;
-    exampleDe: string; exampleFr: string; wordType: string; tip: string | null;
+  const raw = await aiChat("word_of_day", [{ role: "user", content: prompt }], 400);
+  const result = await parseAIJson<{
+    word: string;
+    article: string | null;
+    translation: string;
+    exampleDe: string;
+    exampleFr: string;
+    wordType: string;
+    tip: string | null;
   }>(raw);
+
+  if (recentWords.includes(result.word)) {
+    throw new Error(`Mot dupliqué généré pour ${level} : "${result.word}"`);
+  }
+
+  return result;
 }
 
 export const generateWordOfDayFn = inngest.createFunction(
-  { 
+  {
     id: "generate-word-of-day",
     name: "Générer les mots du jour",
-    retries: 2,
-    triggers: [
-      { cron: "0 0 * * *" } // ✅ ici maintenant
-    ]
+    retries: 3,
+    triggers: [{ cron: "0 0 * * *" }],
   },
   async ({ step }) => {
-    const tomorrow = new Date(Date.now() + 86400000)
-      .toISOString()
-      .split("T")[0];
+    const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0];
 
     for (const level of LEVELS) {
       await step.run(`generate-${level}`, async () => {
-        // Vérifier si déjà généré
-        const [existing] = await db
-          .select()
-          .from(wordOfDay)
-          .where(
-            and(
-              eq(wordOfDay.date, tomorrow),
-              eq(wordOfDay.level, level)
-            )
-          );
+        const existing = await db.query.wordOfDay.findFirst({
+          where: and(eq(wordOfDay.date, tomorrow), eq(wordOfDay.level, level)),
+        });
 
         if (existing) return { skipped: true, level };
 
-        const generated = await generateWordForLevel(level, tomorrow);
+        const recentWords = await getRecentWords(level);
+        const generated = await generateWordForLevel(level, tomorrow, recentWords);
 
         await db.insert(wordOfDay).values({
           id: nanoid(),

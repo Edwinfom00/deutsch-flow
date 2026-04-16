@@ -80,7 +80,7 @@ export function MatchingHeadlinesRenderer({ exercise, onAnswer, answered }: Prop
           const isWrong = answered && selected && selected !== text.correctAnswer;
 
           return (
-            <motion.div key={text.number} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+            <motion.div key={`text-${text.number}-${i}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.07 }}
               className={cn(
                 "border rounded-md overflow-hidden",
@@ -106,7 +106,7 @@ export function MatchingHeadlinesRenderer({ exercise, onAnswer, answered }: Prop
                 <p className="text-xs text-gray-500 shrink-0">Titre :</p>
                 <div className="flex flex-wrap gap-1.5">
                   {exercise.headlines?.map((h) => (
-                    <button key={h.letter} onClick={() => handleSelect(text.number, h.letter)}
+                    <button key={`btn-${text.number}-${h.letter}`} onClick={() => handleSelect(text.number, h.letter)}
                       disabled={answered}
                       className={cn(
                         "h-7 w-7 rounded-md text-xs font-black border transition-all",

@@ -65,13 +65,13 @@ export function FillInBlankRenderer({ exercise, onAnswer, answered }: Props) {
           <motion.div key={blank.position} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="space-y-2">
             {exercise.blanks.length > 1 && <p className="text-xs text-gray-400">Blanc {blank.position}</p>}
             <div className="flex flex-wrap gap-2">
-              {blank.options.map((opt) => {
+              {blank.options.map((opt, oi) => {
                 const isSel = ua === opt;
                 const isCorrect = answered && opt === blank.answer;
                 const isWrong = answered && isSel && opt !== blank.answer;
                 return (
                   <button
-                    key={opt}
+                    key={`opt-${blank.position}-${oi}`}
                     onClick={() => handleSelect(blank.position, opt)}
                     disabled={answered}
                     className={cn(

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, BookOpen, Mic, Zap, Trophy,
-  Settings, ChevronRight, Flame, LogOut, GraduationCap, Upload, BarChart2, Bot,
+  Settings, ChevronRight, Flame, LogOut, GraduationCap, Upload, BarChart2, Bot, Wrench,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup,
@@ -30,7 +30,7 @@ const nav = [
         ],
       },
       { title: "Zone de Parole", href: "/speak", icon: Mic },
-      { title: "Tuteur IA", href: "/chat", icon: Bot },
+      { title: "Tuteur IA", href: "/chat", icon: Bot, badge: "repair" },
     ],
   },
   {
@@ -149,6 +149,7 @@ export function AppSidebar({ userName, userEmail, level, totalXp }: Props) {
 
                 const href = (item as { href: string }).href;
                 const isActive = pathname === href;
+                const badge = (item as { badge?: string }).badge;
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
@@ -157,7 +158,13 @@ export function AppSidebar({ userName, userEmail, level, totalXp }: Props) {
                       render={
                         <Link href={href} className="flex items-center gap-2">
                           <Icon className="h-4 w-4 shrink-0" />
-                          <span>{item.title}</span>
+                          <span className="flex-1">{item.title}</span>
+                          {badge === "repair" && (
+                            <span className="flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-sm bg-amber-500/15 text-amber-500 border border-amber-500/20 shrink-0">
+                              <Wrench className="h-2.5 w-2.5" />
+                              bêta
+                            </span>
+                          )}
                         </Link>
                       }
                     />
