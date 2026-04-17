@@ -264,3 +264,36 @@ export const levelTestAttempt = pgTable("level_test_attempt", {
 }, (t) => [
   index("level_test_user_idx").on(t.userId),
 ]);
+
+export const phraseDuJour = pgTable("phrase_du_jour", {
+  id: text("id").primaryKey(),
+  date: text("date").notNull(),
+  level: ceferLevelEnum("level").notNull(),
+  sector: sectorEnum("sector").notNull(),
+  phraseDe: text("phrase_de").notNull(),
+  phraseFr: text("phrase_fr").notNull(),
+  context: text("context").notNull(),
+  tip: text("tip"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex("phrase_du_jour_date_level_sector_idx").on(t.date, t.level, t.sector),
+]);
+
+export const verbCache = pgTable("verb_cache", {
+  id: text("id").primaryKey(),
+  infinitive: text("infinitive").notNull().unique(),
+  translation: text("translation").notNull(),
+  sector: sectorEnum("sector").notNull(),
+  level: ceferLevelEnum("level").notNull(),
+  isIrregular: boolean("is_irregular").notNull().default(false),
+  auxiliary: text("auxiliary"),
+  participle: text("participle"),
+  conjugations: jsonb("conjugations").notNull(),
+  sentences: jsonb("sentences").notNull().default({}),
+  irregularityNote: text("irregularity_note"),
+  memoryTip: text("memory_tip"),
+  story: jsonb("story"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (t) => [
+  index("verb_cache_sector_level_idx").on(t.sector, t.level),
+]);

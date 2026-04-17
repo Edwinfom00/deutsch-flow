@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import { useTTS, EL_VOICES, CEFR_RATE } from "@/lib/tts";
 import { evalSpeakingResponse } from "../../server/speaking.actions";
 import type { SpeakingEvalResult } from "../../server/speaking.actions";
+import { ShadowingPlayer } from "@/components/shared/ShadowingPlayer";
 
 // ── STT hook (Speech-to-Text via Web Speech API) ─────────────────────────────
 
@@ -232,6 +233,14 @@ export function SprechenRenderer({ exercise, onAnswer, answered }: Props) {
             </button>
           </div>
         </div>
+      )}
+
+      {/* ── Shadowing — répéter la phrase d'ouverture ─────────────────────── */}
+      {exercise.aiOpener && !answered && (
+        <ShadowingPlayer
+          text={exercise.aiOpener}
+          lang="de-DE"
+        />
       )}
 
       {/* ── User response ─────────────────────────────────────────────────── */}

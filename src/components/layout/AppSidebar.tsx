@@ -4,8 +4,9 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, BookOpen, Mic, Zap, Trophy,
-  Settings, ChevronRight, Flame, LogOut, GraduationCap, Upload, BarChart2, Bot, Wrench,
+  Settings, ChevronRight, Flame, LogOut, GraduationCap, Upload, BarChart2, Bot, Wrench, Table2,
 } from "lucide-react";
+import { isNewFeature } from "@/lib/is-new-feature";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup,
   SidebarHeader, SidebarMenu, SidebarMenuButton,
@@ -26,10 +27,14 @@ const nav = [
         children: [
           { title: "Leçons", href: "/learn" },
           { title: "Révisions", href: "/review" },
+          { title: "Nuit blanche", href: "/review/night" },
           { title: "Vocabulaire", href: "/vocabulary" },
+          // { title: "Conjugaison", href: "/learn/conjugation" },
+          { title: "Articles", href: "/learn/articles" },
         ],
       },
       { title: "Zone de Parole", href: "/speak", icon: Mic },
+      { title: "Conjugaison", href: "/conjugation", icon: Table2, badgeNewUntil: "2026-04-24" },
       { title: "Tuteur IA", href: "/chat", icon: Bot, badge: "repair" },
     ],
   },
@@ -150,6 +155,8 @@ export function AppSidebar({ userName, userEmail, level, totalXp }: Props) {
                 const href = (item as { href: string }).href;
                 const isActive = pathname === href;
                 const badge = (item as { badge?: string }).badge;
+                const badgeNewUntil = (item as { badgeNewUntil?: string }).badgeNewUntil;
+                const showNewBadge = badgeNewUntil ? isNewFeature(badgeNewUntil) : false;
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
@@ -163,6 +170,11 @@ export function AppSidebar({ userName, userEmail, level, totalXp }: Props) {
                             <span className="flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-sm bg-amber-500/15 text-amber-500 border border-amber-500/20 shrink-0">
                               <Wrench className="h-2.5 w-2.5" />
                               bêta
+                            </span>
+                          )}
+                          {showNewBadge && (
+                            <span className="text-[9px] font-black px-1.5 py-0.5 rounded-sm bg-emerald-500/15 text-emerald-500 border border-emerald-500/20 shrink-0">
+                              NEW
                             </span>
                           )}
                         </Link>

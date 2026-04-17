@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle2, XCircle, Clock, BookOpen } from "lucide-react";
+import { ClickableText } from "@/components/shared/ClickableText";
 import { cn } from "@/lib/utils";
 
 interface Option { A: string; B: string; C: string }
@@ -88,14 +89,18 @@ export function MultipleChoiceReadingRenderer({ exercise, onAnswer, answered }: 
           {showText && (
             <div className="p-4 max-h-72 overflow-y-auto space-y-3">
               {typeof exercise.readingText === "string" ? (
-                <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-line">{exercise.readingText}</p>
+                <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-line">
+                  <ClickableText text={exercise.readingText} />
+                </p>
               ) : (
                 <>
                   {exercise.readingText.subtitle && (
                     <p className="text-xs font-semibold text-gray-500 italic">{exercise.readingText.subtitle}</p>
                   )}
                   {exercise.readingText.content && (
-                    <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-line">{exercise.readingText.content}</p>
+                    <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-line">
+                      <ClickableText text={exercise.readingText.content} />
+                    </p>
                   )}
                   {exercise.readingText.glossary && (
                     <div className="border-t border-gray-100 pt-2">

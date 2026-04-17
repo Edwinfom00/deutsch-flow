@@ -304,7 +304,7 @@ export async function completeLearnSession(params: {
     }
   }
 
-  // ── Streak ────────────────────────────────────────────────────────────────
+  // ── Streak — calculé depuis dailySession (source de vérité) ─────────────
   const [todayStreak] = await db
     .select()
     .from(streakHistory)
@@ -315,18 +315,34 @@ export async function completeLearnSession(params: {
       id: nanoid(), userId: uid, date: today, completed: true,
     });
 
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
-    const [yest] = await db.select().from(streakHistory)
-      .where(and(eq(streakHistory.userId, uid), eq(streakHistory.date, yesterday)));
+    // Recalculer depuis dailySession — source de vérité fiable
+    const allSessions = await db
+      .select({ date: dailySession.date })
+      .from(dailySession)
+      .where(eq(dailySession.userId, uid));
+
+    const activeDates = new Set(allSessions.map((s) => s.date));
+    activeDates.add(today); // aujourd'hui vient d'être complété
+
+    let streak = 0;
+    let checkDate = new Date();
+    for (let i = 0; i < 365; i++) {
+      const dateStr = checkDate.toISOString().split("T")[0];
+      if (activeDates.has(dateStr)) {
+        streak++;
+        checkDate = new Date(checkDate.getTime() - 86400000);
+      } else {
+        break;
+      }
+    }
 
     const profile = await db.query.userProfile.findFirst({
       where: (p, { eq }) => eq(p.userId, uid),
     });
 
-    const newStreak = yest?.completed ? (profile?.currentStreak ?? 0) + 1 : 1;
     await db.update(userProfile).set({
-      currentStreak: newStreak,
-      longestStreak: Math.max(newStreak, profile?.longestStreak ?? 0),
+      currentStreak: streak,
+      longestStreak: Math.max(streak, profile?.longestStreak ?? 0),
       updatedAt: new Date(),
     }).where(eq(userProfile.userId, uid));
   }

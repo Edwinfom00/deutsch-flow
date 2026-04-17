@@ -76,3 +76,18 @@ export const leagueMember = pgTable("league_member", {
   uniqueIndex("league_member_user_week_idx").on(t.userId, t.weekNumber),
   index("league_member_week_xp_idx").on(t.weekNumber, t.weekXp),
 ]);
+
+export const streakChallenge = pgTable("streak_challenge", {
+  id: text("id").primaryKey(),
+  challengerId: text("challenger_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  challengedId: text("challenged_id").references(() => user.id, { onDelete: "set null" }),
+  importId: text("import_id"),
+  status: text("status").notNull().default("pending"),
+  challengerScore: integer("challenger_score"),
+  challengedScore: integer("challenged_score"),
+  challengerCompleted: boolean("challenger_completed").notNull().default(false),
+  challengedCompleted: boolean("challenged_completed").notNull().default(false),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});

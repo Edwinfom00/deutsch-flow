@@ -7,6 +7,7 @@ import { X, Zap, ChevronRight } from "lucide-react";
 import { useSessionStore } from "../model/session.store";
 import { ExerciseRenderer } from "@/modules/exercises/components/ExerciseRenderer";
 import { completeLearnSession, saveSessionProgress } from "../server/learn.actions";
+import { CountdownTimer } from "@/modules/import/components/CountdownTimer";
 import type { ExerciseContent } from "@/types";
 import type { ExerciseResult } from "@/modules/exercises/components/ExerciseRenderer";
 
@@ -20,6 +21,14 @@ export function LearnSession() {
 
   const current = exercises[currentIndex];
   const progress = exercises.length > 0 ? (currentIndex / exercises.length) : 0;
+  const timeLimit = current ? (current.content as { timeLimit?: number }).timeLimit ?? null : null;
+
+  const handleTimerExpire = useCallback(() => {
+    if (!current) return;
+    submitResult(current.id, { score: 0, quality: 1, timeSpentSeconds: timeLimit ?? 0 });
+    saveSessionProgress({ currentIndex: currentIndex + 1, result: { score: 0, quality: 1, timeSpentSeconds: timeLimit ?? 0, exerciseId: current.id } }).catch(() => {});
+    setTimeout(() => next(), 500);
+  }, [current, submitResult, next, currentIndex, timeLimit]);
 
   const handleComplete = useCallback((result: ExerciseResult) => {
     // Guard — current peut être undefined si currentIndex est désynchronisé
@@ -180,6 +189,15 @@ export function LearnSession() {
         <span className="text-xs text-gray-400 font-mono tabular-nums">
           {currentIndex + 1}/{exercises.length}
         </span>
+
+        {/* Timer optionnel */}
+        {timeLimit && (
+          <CountdownTimer
+            key={`${current?.id}-timer`}
+            seconds={timeLimit}
+            onExpire={handleTimerExpire}
+          />
+        )}
       </div>
 
       {/* Exercise */}

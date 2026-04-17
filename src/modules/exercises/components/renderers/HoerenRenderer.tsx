@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Volume2, VolumeX, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTTS, EL_VOICES, CEFR_RATE } from "@/lib/tts";
+import { ShadowingPlayer } from "@/components/shared/ShadowingPlayer";
 
 // ─── AudioPlayer ─────────────────────────────────────────────────────────────
 // Shared audio player for all Hören exercise types.
@@ -256,6 +257,9 @@ export function HoerenMCRenderer({
   return (
     <div className="space-y-4">
       <AudioPlayer script={exercise.script} level={exercise.level} />
+      {answered && (
+        <ShadowingPlayer text={exercise.script} lang="de-DE" />
+      )}
       <p className="text-sm font-medium text-gray-900">{exercise.question}</p>
       <div className="space-y-2">
         {exercise.options.map((opt, i) => {

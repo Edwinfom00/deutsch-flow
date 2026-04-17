@@ -13,7 +13,9 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "vocab:backfill": "dotenv -e .env.local -- tsx scripts/backfill-vocab-cache.ts",
-    "vocab:clear": "dotenv -e .env.local -- tsx scripts/clear-vocabulary.ts"
+    "vocab:clear": "dotenv -e .env.local -- tsx scripts/clear-vocabulary.ts",
+    "streak:fix": "dotenv -e .env.local -- tsx scripts/fix-streaks.ts",
+    "streak:debug": "dotenv -e .env.local -- tsx scripts/debug-streak.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.88.0",
