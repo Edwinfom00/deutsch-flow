@@ -54,7 +54,7 @@ export const generateModellsatzFn = inngest.createFunction(
     const exercises = await step.run("generate", async () => {
       const response = await anthropic.messages.create({
         model: AI_MODEL,
-        max_tokens: 8000,
+        max_tokens: 10000,
         messages: [{
           role: "user",
           content: `Tu dois générer 2 Modellsatz complets de niveau ${level} pour le secteur ${sector}.
@@ -66,23 +66,38 @@ Exemple d'exercice source (format exact à respecter):
 ${JSON.stringify(sourceExercises[0].content, null, 2).slice(0, 1500)}
 
 RÈGLES:
-1. Respecte EXACTEMENT la même structure JSON
-2. Génère des contenus DIFFÉRENTS (nouveaux textes, nouvelles questions)
+1. Respecte EXACTEMENT la même structure JSON par type
+2. Génère des contenus DIFFÉRENTS (nouveaux textes, nouvelles questions, nouveaux dialogues)
 3. Maintiens le niveau ${level}
-4. Chaque Modellsatz: 1 MATCHING_HEADLINES, 1 MULTIPLE_CHOICE_READING, 1 SITUATION_AD_MATCHING, 1 GRAMMATIK_LUECKENTEXT, 1 SCHREIBEN_EMAIL
-5. Inclure timeLimit, maxPoints, instructions, scoringRules
+4. Chaque Modellsatz DOIT contenir exactement 7 exercices couvrant les 4 compétences:
+   - LESEN: 1 MATCHING_HEADLINES, 1 MULTIPLE_CHOICE_READING, 1 SITUATION_AD_MATCHING
+   - SCHREIBEN: 1 SCHREIBEN_EMAIL
+   - HOEREN: 1 HOEREN_MULTIPLE_CHOICE (dialogue avec questions QCM)
+   - GRAMMATIK: 1 GRAMMATIK_LUECKENTEXT
+   - SPRECHEN: 1 SPRECHEN_ROLEPLAY (scénario de dialogue avec rôles)
+5. Structures des types manquants:
+   • HOEREN_MULTIPLE_CHOICE → { type, script:{dialogue:[{locuteur,replique}]}, questions:[{numero,question,options:{A,B,C},bonne_reponse,explication_FR}], consigne_FR, timeLimit, maxPoints, skill:"HOEREN" }
+   • SPRECHEN_ROLEPLAY → { type, scenario, userRole, partnerRole, suggestedPhrases:[], evaluationCriteria:[], timeLimit, skill:"SPRECHEN" }
+6. Inclure timeLimit, maxPoints, instructions, scoringRules sur tous les exercices
+7. Chaque exercice a un champ "modellsatz_index" (1 ou 2)
 
-Réponds avec un tableau JSON de 10 exercices (5 par Modellsatz).
-Chaque exercice a un champ "modellsatz_index" (1 ou 2).`,
+Réponds avec un tableau JSON de 14 exercices (7 par Modellsatz).`,
         }],
       });
       return parseAIJson<Array<Record<string, unknown>>>((response.content[0] as { text: string }).text);
     });
 
-    // Sauvegarder les exercices
+    // Sauvegarder les exercices — orderIndex encode modellsatz_index * 100 + position
     const savedIds = await step.run("save-exercises", async () => {
       const ids: string[] = [];
-      for (const [i, content] of exercises.entries()) {
+      // Compter les positions par modellsatz_index pour un orderIndex propre
+      const counters: Record<number, number> = {};
+      for (const [, content] of exercises.entries()) {
+        const mIdx = (content.modellsatz_index as number) ?? 1;
+        counters[mIdx] = (counters[mIdx] ?? 0) + 1;
+        const posInSatz = counters[mIdx] - 1;
+        // orderIndex = (modellsatz_index - 1) * 100 + position dans le satz
+        const orderIndex = (mIdx - 1) * 100 + posInSatz;
         const [ex] = await db.insert(importedExercise).values({
           id: nanoid(),
           importId: newImportId,
@@ -95,7 +110,7 @@ Chaque exercice a un champ "modellsatz_index" (1 ou 2).`,
           xpReward: 20,
           difficultyScore: 0.7,
           isGenerated: true,
-          orderIndex: i,
+          orderIndex,
         }).returning();
         ids.push(ex.id);
       }

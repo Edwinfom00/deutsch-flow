@@ -22,6 +22,8 @@ export function LearnSession() {
   const progress = exercises.length > 0 ? (currentIndex / exercises.length) : 0;
 
   const handleComplete = useCallback((result: ExerciseResult) => {
+    // Guard — current peut être undefined si currentIndex est désynchronisé
+    if (!current) return;
     submitResult(current.id, result);
     // Sauvegarder la progression en DB
     saveSessionProgress({
@@ -34,7 +36,7 @@ export function LearnSession() {
   const handleFinish = () => {
     startTransition(async () => {
       await completeLearnSession({
-        exerciseResults: results.map((r) => ({
+        exerciseResults: (Array.isArray(results) ? results : []).map((r) => ({
           exerciseId: r.exerciseId,
           score: r.score,
           quality: r.quality,
@@ -50,8 +52,9 @@ export function LearnSession() {
 
   // ── Écran de résultats ────────────────────────────────────────────────────
   if (status === "completed") {
+    const safeResults = Array.isArray(results) ? results : [];
     const xp = totalXpEarned();
-    const score = avgScore();
+    const score = safeResults.length > 0 ? avgScore() : 0;
     const scoreIcon = score >= 80 ? "A" : score >= 60 ? "B" : "C";
     const scoreColor = score >= 80 ? "bg-emerald-500" : score >= 60 ? "bg-amber-500" : "bg-gray-400";
     return (
@@ -95,7 +98,7 @@ export function LearnSession() {
 
           {/* Per-exercise recap */}
           <div className="space-y-2 text-left">
-            {results.map((r, i) => {
+            {safeResults.map((r, i) => {
               const exType = exercises.find((e) => e.id === r.exerciseId)?.type ?? "";
               const typeLabel: Record<string, string> = {
                 LESEN_LUECKENTEXT: "Lire · texte lacunaire", LESEN_MULTIPLE_CHOICE: "Lire · QCM",

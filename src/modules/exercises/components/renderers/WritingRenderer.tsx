@@ -206,13 +206,15 @@ export function WritingRenderer({ exercise, onAnswer, answered }: Props) {
               </div>
             )}
 
-            {/* Exemple de réponse modèle si disponible */}
-            {evaluation.modelAnswer && (
-              <div className="bg-blue-50 border border-blue-200 rounded-md p-4 space-y-2">
-                <p className="text-[10px] font-semibold text-blue-600 uppercase tracking-wider">Exemple de réponse</p>
+            {/* Exemple de réponse modèle — toujours affiché après évaluation */}
+            <div className="bg-blue-50 border border-blue-200 rounded-md p-4 space-y-2">
+              <p className="text-[10px] font-semibold text-blue-600 uppercase tracking-wider">Exemple de réponse corrigée</p>
+              {evaluation.modelAnswer ? (
                 <p className="text-sm text-blue-900 leading-relaxed whitespace-pre-line">{evaluation.modelAnswer}</p>
-              </div>
-            )}
+              ) : (
+                <p className="text-sm text-blue-400 italic">Exemple non disponible pour cet exercice.</p>
+              )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

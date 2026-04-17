@@ -81,7 +81,11 @@ export async function startLearnSession() {
   }));
 
   // Générer via notre modèle IA avec adaptation
-  const generated = await generateDailySession(level, sector, goalMinutes, skillProfiles);
+  const rawGenerated = await generateDailySession(level, sector, goalMinutes, skillProfiles);
+  // Guard : s'assurer que le retour est bien un tableau (l'IA peut retourner null ou un objet)
+  const generated = Array.isArray(rawGenerated) && rawGenerated.length > 0
+    ? rawGenerated
+    : (() => { throw new Error("La génération de session a retourné un résultat invalide. Réessaie."); })();
 
   // Sauvegarder les exercices en DB
   const saved = await Promise.all(

@@ -107,7 +107,8 @@ export function LearnPage({ level, sector, goalMinutes }: Props) {
           getActiveSession(),
           getLearnHistory(),
         ]);
-        if (active && active.exercises.length > 0 && (status === "idle" || exercises.length === 0)) {
+        const activeExercises = Array.isArray(active?.exercises) ? active.exercises : [];
+        if (active && activeExercises.length > 0 && (status === "idle" || exercises.length === 0)) {
           setHasResumable(true);
         }
         setHistory(hist);
@@ -122,7 +123,13 @@ export function LearnPage({ level, sector, goalMinutes }: Props) {
   const handleResume = () => {
     startTransition(async () => {
       const active = await getActiveSession();
-      if (active) setExercises(active.exercises as never, active.currentIndex, active.results as never);
+      if (active && Array.isArray(active.exercises) && active.exercises.length > 0) {
+        setExercises(
+          active.exercises as never,
+          typeof active.currentIndex === "number" ? active.currentIndex : 0,
+          Array.isArray(active.results) ? active.results as never : []
+        );
+      }
       setHasResumable(false);
     });
   };
