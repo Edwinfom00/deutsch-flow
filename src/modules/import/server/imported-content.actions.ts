@@ -3,7 +3,7 @@
 import { db } from "@/lib/db";
 import { importedExercise, importedExerciseResult, documentImport } from "@/lib/db/schema";
 import { assertAuth } from "@/lib/session";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, inArray } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
 export async function getImportedExercisesByType(docType: "exercises" | "modellsatz" | "grammar") {
@@ -20,8 +20,14 @@ export async function getImportedExercisesByType(docType: "exercises" | "modells
       .where(and(eq(importedExercise.importId, imp.id), eq(importedExercise.userId, uid)))
       .orderBy(importedExercise.orderIndex);
 
-    const results = await db.select().from(importedExerciseResult)
-      .where(eq(importedExerciseResult.userId, uid));
+    const exerciseIds = exercises.map((ex) => ex.id);
+    const results = exerciseIds.length > 0
+      ? await db.select().from(importedExerciseResult)
+          .where(and(
+            eq(importedExerciseResult.userId, uid),
+            inArray(importedExerciseResult.importedExerciseId, exerciseIds)
+          ))
+      : [];
 
     const resultMap = new Map(results.map((r) => [r.importedExerciseId, r]));
 

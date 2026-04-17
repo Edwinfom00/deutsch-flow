@@ -667,6 +667,7 @@ export async function evaluateWritingResponse(
   feedback: string;
   corrections: Array<{ original: string; correction: string; explanation: string }>;
   encouragement: string;
+  modelAnswer: string; // toujours présent : exemple de mail/texte corrigé
 }> {
   const prompt = `${SYSTEM_PROMPT_BASE}
 

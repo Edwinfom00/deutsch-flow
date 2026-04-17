@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { documentImport, exercise, spacedRepetition } from "@/lib/db/schema";
+import { documentImport, importedExercise, importedExerciseResult } from "@/lib/db/schema";
 import { assertAuth } from "@/lib/session";
 import { eq, desc, and, inArray } from "drizzle-orm";
 
@@ -61,18 +61,18 @@ export async function getImportedExercises() {
     const res = imp.result as { exerciseIds?: string[] } | null;
     if (!res?.exerciseIds?.length) continue;
 
-    const exercises = await db.select().from(exercise)
-      .where(inArray(exercise.id, res.exerciseIds));
+    const exercises = await db.select().from(importedExercise)
+      .where(inArray(importedExercise.id, res.exerciseIds));
 
-    const srRows = await db.select().from(spacedRepetition)
-      .where(and(eq(spacedRepetition.userId, uid), inArray(spacedRepetition.exerciseId, res.exerciseIds)));
+    const resultRows = await db.select().from(importedExerciseResult)
+      .where(and(eq(importedExerciseResult.userId, uid), inArray(importedExerciseResult.importedExerciseId, res.exerciseIds)));
 
     result.push({
       importId: imp.id,
       fileName: imp.fileName,
       createdAt: imp.createdAt,
       exercises: exercises.map((ex) => {
-        const sr = srRows.find((r) => r.exerciseId === ex.id);
+        const done = resultRows.find((r) => r.importedExerciseId === ex.id);
         return {
           id: ex.id,
           type: ex.type,
@@ -80,8 +80,8 @@ export async function getImportedExercises() {
           level: ex.level,
           content: ex.content,
           xpReward: ex.xpReward,
-          mastery: sr ? (sr.repetitions >= 5 ? "mastered" : sr.repetitions >= 2 ? "learning" : "new") : "new",
-          isDue: sr ? new Date(sr.nextReviewAt) <= new Date() : true,
+          mastery: done ? (done.score >= 80 ? "mastered" : done.score >= 50 ? "learning" : "new") : "new",
+          isDue: !done,
         };
       }),
     });
@@ -102,14 +102,17 @@ export async function getImportedModellsatz() {
     const res = imp.result as { exerciseIds?: string[]; summary?: string } | null;
     if (!res?.exerciseIds?.length) continue;
 
-    const exercises = await db.select().from(exercise)
-      .where(inArray(exercise.id, res.exerciseIds));
+    const exercises = await db.select().from(importedExercise)
+      .where(inArray(importedExercise.id, res.exerciseIds))
+      .orderBy(importedExercise.orderIndex);
 
-    // Grouper par compétence
-    const bySkill: Record<string, typeof exercises> = {};
+    // Grouper par Modellsatz (orderIndex / 100) puis par compétence
+    const satzMap: Record<number, { bySkill: Record<string, typeof exercises> }> = {};
     for (const ex of exercises) {
-      if (!bySkill[ex.skill]) bySkill[ex.skill] = [];
-      bySkill[ex.skill].push(ex);
+      const satzIndex = Math.floor(ex.orderIndex / 100); // 0 = satz original, 1 = satz généré 1, etc.
+      if (!satzMap[satzIndex]) satzMap[satzIndex] = { bySkill: {} };
+      if (!satzMap[satzIndex].bySkill[ex.skill]) satzMap[satzIndex].bySkill[ex.skill] = [];
+      satzMap[satzIndex].bySkill[ex.skill].push(ex);
     }
 
     result.push({
@@ -118,7 +121,13 @@ export async function getImportedModellsatz() {
       createdAt: imp.createdAt,
       summary: res.summary,
       totalExercises: exercises.length,
-      bySkill,
+      // bySkill conservé pour rétrocompatibilité (satz original = satzIndex 0)
+      bySkill: satzMap[0]?.bySkill ?? {},
+      modellsatze: Object.entries(satzMap).map(([idx, s]) => ({
+        index: Number(idx),
+        label: Number(idx) === 0 ? "Original" : `Variante ${Number(idx)}`,
+        bySkill: s.bySkill,
+      })),
     });
   }
   return result;

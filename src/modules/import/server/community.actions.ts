@@ -139,22 +139,24 @@ export async function copyPublicImport(importId: string) {
     level: source.level,
   }).returning();
 
-  // Copier les exercices
-  for (const ex of sourceExercises) {
-    await db.insert(importedExercise).values({
-      id: nanoid(),
-      importId: newImport.id,
-      userId: uid,
-      type: ex.type,
-      level: ex.level,
-      sector: ex.sector,
-      skill: ex.skill,
-      content: ex.content,
-      xpReward: ex.xpReward,
-      difficultyScore: ex.difficultyScore,
-      isGenerated: ex.isGenerated,
-      orderIndex: ex.orderIndex,
-    });
+  // Copier les exercices en un seul bulk insert
+  if (sourceExercises.length > 0) {
+    await db.insert(importedExercise).values(
+      sourceExercises.map((ex) => ({
+        id: nanoid(),
+        importId: newImport.id,
+        userId: uid,
+        type: ex.type,
+        level: ex.level,
+        sector: ex.sector,
+        skill: ex.skill,
+        content: ex.content,
+        xpReward: ex.xpReward,
+        difficultyScore: ex.difficultyScore,
+        isGenerated: ex.isGenerated,
+        orderIndex: ex.orderIndex,
+      }))
+    );
   }
 
   return { importId: newImport.id };

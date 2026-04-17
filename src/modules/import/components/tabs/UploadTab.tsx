@@ -101,11 +101,25 @@ export function UploadTab({ initialImports }: { initialImports: ImportRecord[] }
   useEffect(() => {
     const processing = imports.filter(i => i.status === "pending" || i.status === "processing");
     if (processing.length === 0) { setAnalyzingFile(null); return; }
+
+    let attempts = 0;
+    const MAX_ATTEMPTS = 60; // 3 min max (60 × 3s)
+
     const interval = setInterval(async () => {
+      attempts++;
+      if (attempts >= MAX_ATTEMPTS) {
+        clearInterval(interval);
+        setAnalyzingFile(null);
+        setUploadError("Le traitement prend trop de temps. Vérifie l'onglet Import plus tard.");
+        return;
+      }
       const { getImports } = await import("../../server/import.actions");
       const updated = await getImports();
       setImports(updated);
-      if (!updated.some(i => i.status === "pending" || i.status === "processing")) setAnalyzingFile(null);
+      if (!updated.some(i => i.status === "pending" || i.status === "processing")) {
+        setAnalyzingFile(null);
+        clearInterval(interval);
+      }
     }, 3000);
     return () => clearInterval(interval);
   }, [imports]);

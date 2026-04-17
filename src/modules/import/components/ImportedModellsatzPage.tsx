@@ -167,13 +167,19 @@ export function ImportedModellsatzPage({ data: initialData }: { data: Data }) {
     setIsGenerating(true);
     startTransition(async () => {
       try {
-        // Déclenche Inngest et retourne immédiatement
         await generateMoreModellsatz(importId);
-        // Polling toutes les 3s jusqu'à ce que le job soit terminé
+
+        let attempts = 0;
+        const MAX_ATTEMPTS = 60; // 3 min max (60 × 3s)
+
         const poll = async () => {
+          attempts++;
+          if (attempts >= MAX_ATTEMPTS) {
+            setIsGenerating(false);
+            return;
+          }
           const fresh = await getImportedExercisesByType("modellsatz");
           setData(fresh);
-          // Vérifier si un nouvel import est encore en processing
           const { getImports } = await import("../server/import.actions");
           const allImports = await getImports();
           const stillProcessing = allImports.some(

@@ -49,7 +49,7 @@ export function SchreibenOsdRenderer({ exercise, onAnswer, answered }: Props) {
   const [text, setText] = useState("");
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [evaluation, setEvaluation] = useState<Evaluation | null>(null);
-  const [showModel, setShowModel] = useState(false);
+  // modelAnswer affiché systématiquement — plus besoin d'un toggle
 
   const consigne = exercise.consigne_FR ?? exercise.instructions ?? exercise.titre ?? "";
   const minWords = exercise.minWords ?? 80;
@@ -218,28 +218,26 @@ export function SchreibenOsdRenderer({ exercise, onAnswer, answered }: Props) {
             </div>
           )}
 
-          {/* Exemple de réponse modèle */}
-          {(evaluation.modelAnswer || exercise.exemple_reponse_modele?.texte) && (
-            <div>
-              <button onClick={() => setShowModel(!showModel)}
-                className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors">
-                <FileText className="h-3.5 w-3.5" />
-                {showModel ? "Masquer" : "Voir"} l&apos;exemple de réponse
-              </button>
-              {showModel && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                  className="mt-2 bg-blue-50 border border-blue-200 rounded-md p-4 space-y-2">
-                  <p className="text-[10px] font-semibold text-blue-600 uppercase tracking-wider">Exemple de réponse</p>
-                  <p className="text-sm text-blue-900 leading-relaxed whitespace-pre-line">
-                    {evaluation.modelAnswer ?? exercise.exemple_reponse_modele?.texte}
-                  </p>
-                  {exercise.exemple_reponse_modele?.note_FR && (
-                    <p className="text-xs text-blue-500 italic">{exercise.exemple_reponse_modele.note_FR}</p>
-                  )}
-                </motion.div>
-              )}
+          {/* Exemple de réponse modèle — toujours affiché après évaluation */}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            className="bg-blue-50 border border-blue-200 rounded-md p-4 space-y-2">
+            <div className="flex items-center gap-1.5">
+              <FileText className="h-3.5 w-3.5 text-blue-500" />
+              <p className="text-[10px] font-semibold text-blue-600 uppercase tracking-wider">Exemple de mail corrigé</p>
             </div>
-          )}
+            {(evaluation.modelAnswer || exercise.exemple_reponse_modele?.texte) ? (
+              <>
+                <p className="text-sm text-blue-900 leading-relaxed whitespace-pre-line">
+                  {evaluation.modelAnswer ?? exercise.exemple_reponse_modele?.texte}
+                </p>
+                {exercise.exemple_reponse_modele?.note_FR && (
+                  <p className="text-xs text-blue-500 italic">{exercise.exemple_reponse_modele.note_FR}</p>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-blue-400 italic">Exemple non disponible pour cet exercice.</p>
+            )}
+          </motion.div>
         </motion.div>
       )}
     </div>

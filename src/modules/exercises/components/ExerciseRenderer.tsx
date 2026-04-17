@@ -141,6 +141,15 @@ export function ExerciseRenderer({ exercise, onComplete, onSkip, hideHeader }: E
         </motion.div>
       </AnimatePresence>
 
+      {/* Bouton Passer — avant la réponse, uniquement pour les types non auto-contenus */}
+      {!isSelfContained && !result && onSkip && (
+        <div className="flex justify-end">
+          <button onClick={onSkip} className="text-xs text-gray-400 hover:text-gray-600 h-8 px-3 rounded-md transition-colors">
+            Passer
+          </button>
+        </div>
+      )}
+
       {/* Feedback + bouton Suivant — seulement pour les types NON auto-contenus */}
       {!isSelfContained && (
         <AnimatePresence>
@@ -180,11 +189,6 @@ export function ExerciseRenderer({ exercise, onComplete, onSkip, hideHeader }: E
                 >
                   Suivant <ArrowRight className="h-3.5 w-3.5" />
                 </button>
-                {onSkip && !result && (
-                  <button onClick={onSkip} className="text-xs text-gray-400 hover:text-gray-600 h-8 px-3 rounded-md transition-colors">
-                    Passer
-                  </button>
-                )}
               </div>
             </motion.div>
           )}
@@ -302,8 +306,28 @@ function ExerciseBody({
   // ── Types standard ────────────────────────────────────────────────────────
   if (rawType === "LESEN_MULTIPLE_CHOICE")
     return <MultipleChoiceRenderer exercise={exercise as never} onAnswer={onAnswer} answered={answered} />;
-  if (rawType === "HOEREN_MULTIPLE_CHOICE")
+
+  // HOEREN ÖSD : script est un objet {dialogue:[]} → adapter avant d'envoyer au renderer
+  if (rawType === "HOEREN_MULTIPLE_CHOICE") {
+    const scriptRaw = content.script;
+    if (scriptRaw && typeof scriptRaw === "object" && !Array.isArray(scriptRaw)) {
+      const dialogue = (scriptRaw as { dialogue?: Array<{ locuteur: string; replique: string }> }).dialogue ?? [];
+      const scriptText = dialogue.map((d) => `${d.locuteur}: ${d.replique}`).join("\n");
+      const questions = content.questions as Array<{ numero?: number; question?: string; options?: Record<string, string>; bonne_reponse?: string }> ?? [];
+      const firstQ = questions[0];
+      return <HoerenMCRenderer exercise={{
+        ...exercise,
+        type: "HOEREN_MULTIPLE_CHOICE",
+        script: scriptText,
+        question: firstQ?.question ?? "",
+        options: Object.entries(firstQ?.options ?? {}).map(([id, text]) => ({
+          id, text: text as string,
+          isCorrect: id === firstQ?.bonne_reponse,
+        })),
+      } as never} onAnswer={onAnswer} answered={answered} />;
+    }
     return <HoerenMCRenderer exercise={exercise as never} onAnswer={onAnswer} answered={answered} />;
+  }
   if (rawType === "LESEN_RICHTIG_FALSCH")
     return <TrueFalseRenderer exercise={exercise as never} onAnswer={onAnswer} answered={answered} />;
   if (rawType === "HOEREN_RICHTIG_FALSCH")

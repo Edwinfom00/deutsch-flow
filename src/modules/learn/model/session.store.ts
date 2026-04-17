@@ -52,11 +52,14 @@ export const useSessionStore = create<SessionStore>()(
       setError: (error) => set({ error, status: "error" }),
 
       submitResult: (exerciseId, result) =>
-        set((s) => ({ results: [...s.results, { ...result, exerciseId }] })),
+        set((s) => ({
+          results: [...(Array.isArray(s.results) ? s.results : []), { ...result, exerciseId }],
+        })),
 
       next: () => {
         const { currentIndex, exercises } = get();
-        if (currentIndex + 1 >= exercises.length) {
+        const safeExercises = Array.isArray(exercises) ? exercises : [];
+        if (currentIndex + 1 >= safeExercises.length) {
           set({ status: "completed" });
         } else {
           set({ currentIndex: currentIndex + 1 });
@@ -73,8 +76,10 @@ export const useSessionStore = create<SessionStore>()(
 
       totalXpEarned: () => {
         const { exercises, results } = get();
-        const xpById = new Map(exercises.map((e) => [e.id, e.xpReward]));
-        return results.reduce((sum, r) => {
+        const safeExercises = Array.isArray(exercises) ? exercises : [];
+        const safeResults = Array.isArray(results) ? results : [];
+        const xpById = new Map(safeExercises.map((e) => [e.id, e.xpReward]));
+        return safeResults.reduce((sum, r) => {
           const xp = xpById.get(r.exerciseId) ?? 10;
           return sum + Math.round(xp * (r.score / 100));
         }, 0);
@@ -82,8 +87,9 @@ export const useSessionStore = create<SessionStore>()(
 
       avgScore: () => {
         const { results } = get();
-        if (!results.length) return 0;
-        return Math.round(results.reduce((s, r) => s + r.score, 0) / results.length);
+        const safeResults = Array.isArray(results) ? results : [];
+        if (!safeResults.length) return 0;
+        return Math.round(safeResults.reduce((s, r) => s + r.score, 0) / safeResults.length);
       },
     }),
     {
@@ -97,11 +103,23 @@ export const useSessionStore = create<SessionStore>()(
       ),
       // On persiste uniquement les données essentielles, pas le status "loading"
       partialize: (state) => ({
-        exercises: state.exercises,
-        currentIndex: state.currentIndex,
-        results: state.results,
+        exercises: Array.isArray(state.exercises) ? state.exercises : [],
+        currentIndex: typeof state.currentIndex === "number" ? state.currentIndex : 0,
+        results: Array.isArray(state.results) ? state.results : [],
         status: state.status === "loading" ? "idle" : state.status,
       }),
+      // Reset automatique si l'état restauré est corrompu
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
+        if (!Array.isArray(state.exercises)) state.exercises = [];
+        if (!Array.isArray(state.results)) state.results = [];
+        if (typeof state.currentIndex !== "number") state.currentIndex = 0;
+        // Si currentIndex dépasse la longueur du tableau, reset
+        if (state.currentIndex >= state.exercises.length && state.exercises.length > 0) {
+          state.currentIndex = 0;
+          state.status = "idle";
+        }
+      },
     }
   )
 );
