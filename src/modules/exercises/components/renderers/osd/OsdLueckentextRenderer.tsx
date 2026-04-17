@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { GermanKeyboard } from "@/components/ui/german-keyboard";
+import { ClickableText } from "@/components/shared/ClickableText";
 
 interface Question {
   number?: number;
@@ -40,6 +42,8 @@ interface Props {
 export function OsdLueckentextRenderer({ exercise, onAnswer, answered }: Props) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [showVocab, setShowVocab] = useState(false);
+  const [focusedKey, setFocusedKey] = useState<string | null>(null);
+  const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const questions = exercise.questions ?? [];
   const textContent = exercise.texte?.corps ?? exercise.text ?? "";
@@ -73,7 +77,9 @@ export function OsdLueckentextRenderer({ exercise, onAnswer, answered }: Props) 
       {textContent && (
         <div className="bg-gray-50 border border-gray-200 rounded-md p-4 space-y-2">
           {textTitle && <p className="text-xs font-semibold text-gray-500 italic">{textTitle}</p>}
-          <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-line">{textContent}</p>
+          <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-line">
+            <ClickableText text={textContent} />
+          </p>
         </div>
       )}
 
@@ -149,16 +155,28 @@ export function OsdLueckentextRenderer({ exercise, onAnswer, answered }: Props) 
                   })}
                 </div>
               ) : (
-                <input type="text" disabled={answered}
-                  value={selected ?? ""}
-                  onChange={(e) => handleSelect(key, e.target.value)}
-                  placeholder="Ta réponse…"
-                  className={cn(
-                    "ml-7 h-8 px-3 border rounded-md text-sm w-48 focus:outline-none transition-colors",
-                    answered && isCorrect && "border-emerald-400 bg-emerald-50 text-emerald-800",
-                    answered && isWrong && "border-red-300 bg-red-50 text-red-700",
-                    !answered && "border-gray-200 focus:border-gray-400"
-                  )} />
+                <div className="ml-7 space-y-1.5">
+                  <input type="text" disabled={answered}
+                    ref={(el) => { inputRefs.current[key] = el; }}
+                    value={selected ?? ""}
+                    onChange={(e) => handleSelect(key, e.target.value)}
+                    onFocus={() => setFocusedKey(key)}
+                    placeholder="Ta réponse…"
+                    className={cn(
+                      "h-8 px-3 border rounded-md text-sm w-48 focus:outline-none transition-colors",
+                      answered && isCorrect && "border-emerald-400 bg-emerald-50 text-emerald-800",
+                      answered && isWrong && "border-red-300 bg-red-50 text-red-700",
+                      !answered && "border-gray-200 focus:border-gray-400"
+                    )} />
+                  {focusedKey === key && (
+                    <GermanKeyboard
+                      inputRef={{ current: inputRefs.current[key] } as React.RefObject<HTMLInputElement>}
+                      value={selected ?? ""}
+                      onInsert={(val) => handleSelect(key, val)}
+                      disabled={answered}
+                    />
+                  )}
+                </div>
               )}
 
               {answered && (

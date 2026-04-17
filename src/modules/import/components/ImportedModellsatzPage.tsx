@@ -18,6 +18,7 @@ import type { getImportedExercisesByType as GetType } from "../server/imported-c
 import { CountdownTimer } from "./CountdownTimer";
 import { cn } from "@/lib/utils";
 import { PublishButton } from "./PublishButton";
+import { ChallengeButton } from "@/modules/gamification/components/ChallengeButton";
 
 type Data = Awaited<ReturnType<typeof GetType>>;
 type ImportGroup = Data[number];
@@ -440,6 +441,7 @@ export function ImportedModellsatzPage({ data: initialData }: { data: Data }) {
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
                       <PublishButton importId={group.importId} isPublic={group.isPublic} level={group.level} />
+                      <ChallengeButton importId={group.importId} fileName={group.fileName} />
                       <button
                         onClick={() => handleGenerate(group.importId)}
                         disabled={isGenerating || isPending}

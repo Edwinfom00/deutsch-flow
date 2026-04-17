@@ -11,8 +11,11 @@ import type { CEFRLevel, Sector, Goal } from "@/types";
 import type { getDashboardData } from "../server/dashboard.actions";
 import type { getWordOfDay } from "../server/word-of-day.actions";
 import { WordOfDayWidget } from "./WordOfDayWidget";
+import { PhraseDuJourWidget } from "./PhraseDuJourWidget";
+import type { getPhraseDuJour } from "../server/phrase-du-jour.actions";
 
 type WordEntry = NonNullable<Awaited<ReturnType<typeof getWordOfDay>>>;
+type PhraseEntry = NonNullable<Awaited<ReturnType<typeof getPhraseDuJour>>>;
 
 type DashboardData = NonNullable<Awaited<ReturnType<typeof getDashboardData>>>;
 
@@ -31,7 +34,7 @@ const fadeUp = {
 
 const card = "bg-white border border-gray-200/70 rounded-md shadow-[0_1px_3px_rgba(0,0,0,0.04)]";
 
-export function DashboardClient({ data, wordOfDay }: { data: DashboardData; wordOfDay: WordEntry | null }) {
+export function DashboardClient({ data, wordOfDay, phraseDuJour }: { data: DashboardData; wordOfDay: WordEntry | null; phraseDuJour: PhraseEntry | null }) {
   const { user, profile, todayXp, todayExercises, recentSessions } = data;
   const level = (profile?.level ?? "A0") as CEFRLevel;
   const nextLevel = LEVEL_NEXT[level];
@@ -202,6 +205,13 @@ export function DashboardClient({ data, wordOfDay }: { data: DashboardData; word
               })}
             </div>
           </motion.div>
+
+          {/* Phrase du jour — pleine largeur sous les actions rapides */}
+          {phraseDuJour && (
+            <motion.div custom={7} variants={fadeUp} initial="hidden" animate="visible">
+              <PhraseDuJourWidget phrase={phraseDuJour} />
+            </motion.div>
+          )}
         </div>
 
         {/* Right — 1/3 */}

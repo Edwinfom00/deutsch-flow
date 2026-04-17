@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { Loader2, Send, CheckCircle2, AlertCircle, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { GermanKeyboard } from "@/components/ui/german-keyboard";
+import { GenderDetector } from "@/components/shared/GenderDetector";
 
 interface GrilleItem {
   critere: string;
@@ -49,6 +51,7 @@ export function SchreibenOsdRenderer({ exercise, onAnswer, answered }: Props) {
   const [text, setText] = useState("");
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [evaluation, setEvaluation] = useState<Evaluation | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   // modelAnswer affiché systématiquement — plus besoin d'un toggle
 
   const consigne = exercise.consigne_FR ?? exercise.instructions ?? exercise.titre ?? "";
@@ -154,6 +157,7 @@ export function SchreibenOsdRenderer({ exercise, onAnswer, answered }: Props) {
       {/* Zone de rédaction */}
       <div className="relative">
         <textarea
+          ref={textareaRef}
           value={text}
           onChange={(e) => setText(e.target.value)}
           disabled={answered || isEvaluating}
@@ -171,6 +175,17 @@ export function SchreibenOsdRenderer({ exercise, onAnswer, answered }: Props) {
         )}>
           {wordCount} / {minWords}–{maxWords}
         </div>
+      </div>
+
+      {/* Clavier allemand + détecteur de genre */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <GermanKeyboard
+          inputRef={textareaRef}
+          value={text}
+          onInsert={setText}
+          disabled={answered || isEvaluating}
+        />
+        <GenderDetector text={text} />
       </div>
 
       {!answered && (

@@ -1,9 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, Send, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { Loader2, Send, CheckCircle2, XCircle, AlertCircle, Scale } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { GermanKeyboard } from "@/components/ui/german-keyboard";
+import { GenderDetector } from "@/components/shared/GenderDetector";
+import { checkDeclension } from "../../server/declension-check.actions";
+import type { DeclensionError } from "../../server/declension-check.actions";
 import type { WritingExercise } from "@/types";
 
 interface Correction {
@@ -30,6 +34,9 @@ export function WritingRenderer({ exercise, onAnswer, answered }: Props) {
   const [text, setText] = useState("");
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [evaluation, setEvaluation] = useState<Evaluation | null>(null);
+  const [declensionErrors, setDeclensionErrors] = useState<DeclensionError[] | null>(null);
+  const [isCheckingDeclension, setIsCheckingDeclension] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const wordCount = text.trim().split(/\s+/).filter(Boolean).length;
   const minWords = exercise.minWords ?? 30;
@@ -60,6 +67,19 @@ export function WritingRenderer({ exercise, onAnswer, answered }: Props) {
       onAnswer(70, 4, fallback.feedback);
     } finally {
       setIsEvaluating(false);
+    }
+  };
+
+  const handleCheckDeclension = async () => {
+    if (!text.trim() || isCheckingDeclension) return;
+    setIsCheckingDeclension(true);
+    try {
+      const result = await checkDeclension(text, exercise.level);
+      setDeclensionErrors(result.errors);
+    } catch {
+      setDeclensionErrors([]);
+    } finally {
+      setIsCheckingDeclension(false);
     }
   };
 
@@ -101,6 +121,7 @@ export function WritingRenderer({ exercise, onAnswer, answered }: Props) {
       {/* Zone de rédaction */}
       <div className="relative">
         <textarea
+          ref={textareaRef}
           value={text}
           onChange={(e) => setText(e.target.value)}
           disabled={answered || isEvaluating}
@@ -120,6 +141,17 @@ export function WritingRenderer({ exercise, onAnswer, answered }: Props) {
         </div>
       </div>
 
+      {/* Clavier allemand + détecteur de genre */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <GermanKeyboard
+          inputRef={textareaRef}
+          value={text}
+          onInsert={setText}
+          disabled={answered || isEvaluating}
+        />
+        <GenderDetector text={text} />
+      </div>
+
       {/* Phrases utiles */}
       {(exercise as unknown as { useful_phrases?: string[] }).useful_phrases && (
         <div className="flex flex-wrap gap-1.5 items-center">
@@ -136,21 +168,80 @@ export function WritingRenderer({ exercise, onAnswer, answered }: Props) {
 
       {/* Bouton soumettre */}
       {!answered && (
-        <button onClick={handleSubmit} disabled={!isEnough || isEvaluating}
-          className={cn(
-            "flex items-center gap-2 text-sm font-medium h-9 px-5 rounded-md transition-all",
-            isEnough && !isEvaluating ? "bg-gray-900 hover:bg-gray-800 text-white" : "bg-gray-100 text-gray-400 cursor-not-allowed"
-          )}>
-          {isEvaluating
-            ? <><Loader2 className="h-4 w-4 animate-spin" />Correction en cours…</>
-            : <><Send className="h-3.5 w-3.5" />Soumettre pour correction</>
-          }
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button onClick={handleSubmit} disabled={!isEnough || isEvaluating}
+            className={cn(
+              "flex items-center gap-2 text-sm font-medium h-9 px-5 rounded-md transition-all",
+              isEnough && !isEvaluating ? "bg-gray-900 hover:bg-gray-800 text-white" : "bg-gray-100 text-gray-400 cursor-not-allowed"
+            )}>
+            {isEvaluating
+              ? <><Loader2 className="h-4 w-4 animate-spin" />Correction en cours…</>
+              : <><Send className="h-3.5 w-3.5" />Soumettre pour correction</>
+            }
+          </button>
+          {wordCount >= 5 && (
+            <button
+              onClick={handleCheckDeclension}
+              disabled={isCheckingDeclension || isEvaluating}
+              className="cursor-pointer flex items-center gap-1.5 text-xs font-medium h-9 px-3 rounded-md border border-gray-200 hover:border-violet-300 hover:text-violet-600 text-gray-500 transition-colors disabled:opacity-40"
+            >
+              {isCheckingDeclension
+                ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />Vérification…</>
+                : <><Scale className="h-3.5 w-3.5" />Vérifier les cas</>
+              }
+            </button>
+          )}
+        </div>
       )}
 
       {!isEnough && !answered && text.length > 0 && (
         <p className="text-xs text-gray-400">{minWords - wordCount} mot{minWords - wordCount > 1 ? "s" : ""} minimum</p>
       )}
+
+      {/* ── Erreurs de déclinaison ── */}
+      <AnimatePresence>
+        {declensionErrors !== null && !evaluation && (
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="space-y-2"
+          >
+            <p className="text-[10px] font-semibold text-violet-600 uppercase tracking-wider flex items-center gap-1.5">
+              <Scale className="h-3 w-3" />
+              Vérification des cas grammaticaux
+            </p>
+            {declensionErrors.length === 0 ? (
+              <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-md px-3 py-2.5">
+                <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                <p className="text-xs text-emerald-700 font-medium">Aucune erreur de déclinaison détectée</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {declensionErrors.map((e, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -4 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.07 }}
+                    className="bg-white border border-violet-200 rounded-md p-3 space-y-1.5"
+                  >
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[9px] font-bold text-violet-600 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded-sm">
+                        {e.case}
+                      </span>
+                      <span className="text-sm text-red-600 line-through font-medium">{e.original}</span>
+                      <span className="text-gray-300">→</span>
+                      <span className="text-sm text-emerald-700 font-semibold">{e.correction}</span>
+                    </div>
+                    <p className="text-xs text-gray-500">{e.explanation}</p>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── Correction complète ── */}
       <AnimatePresence>

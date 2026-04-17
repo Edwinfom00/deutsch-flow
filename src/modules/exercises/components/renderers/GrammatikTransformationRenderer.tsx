@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { Lightbulb, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { GermanKeyboard } from "@/components/ui/german-keyboard";
 
 interface GrammatikTransformationExercise {
   type: string;
@@ -23,6 +24,7 @@ export function GrammatikTransformationRenderer({ exercise, onAnswer, answered }
   const [input, setInput] = useState("");
   const [showHint, setShowHint] = useState(false);
   const [checked, setChecked] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const normalize = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
 
@@ -50,6 +52,7 @@ export function GrammatikTransformationRenderer({ exercise, onAnswer, answered }
       <div className="space-y-2">
         <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Ta transformation</p>
         <input
+          ref={inputRef}
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -62,6 +65,12 @@ export function GrammatikTransformationRenderer({ exercise, onAnswer, answered }
             "border-gray-200 bg-white focus:border-gray-400 focus:ring-gray-300"
           )}
           onKeyDown={(e) => { if (e.key === "Enter" && !answered) handleCheck(); }}
+        />
+        <GermanKeyboard
+          inputRef={inputRef}
+          value={input}
+          onInsert={setInput}
+          disabled={answered}
         />
       </div>
 
