@@ -157,6 +157,9 @@ JSON :
   const raw = await aiChat("word_of_day", [{ role: "user", content: prompt }], 800);
   const story = await parseAIJson<StoryChallenge>(raw);
 
+  // Garantir que blanks est bien un tableau
+  if (!Array.isArray(story.blanks)) story.blanks = [];
+
   if (row) {
     await db.update(verbCache).set({ story: story as never }).where(eq(verbCache.id, row.id));
   }

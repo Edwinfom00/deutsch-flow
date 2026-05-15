@@ -245,12 +245,27 @@ export function HoerenMCRenderer({
   onAnswer: (s: number, q: number) => void;
   answered: boolean;
 }) {
+  // Normaliser options — l'IA peut retourner un objet {a,b,c} ou un tableau
+  const options: Array<{ id: string; text: string; isCorrect: boolean }> = (() => {
+    const raw = exercise.options;
+    if (Array.isArray(raw)) return raw;
+    if (raw && typeof raw === "object") {
+      return Object.entries(raw as Record<string, unknown>).map(([id, val]) => {
+        if (typeof val === "object" && val !== null) {
+          const v = val as Record<string, unknown>;
+          return { id, text: String(v.text ?? v.option ?? id), isCorrect: Boolean(v.isCorrect ?? false) };
+        }
+        return { id, text: String(val), isCorrect: false };
+      });
+    }
+    return [];
+  })();
   const [selected, setSelected] = useState<string | null>(null);
 
   const handleSelect = (id: string) => {
     if (answered) return;
     setSelected(id);
-    const isCorrect = exercise.options.find((o) => o.id === id)?.isCorrect ?? false;
+    const isCorrect = options.find((o) => o.id === id)?.isCorrect ?? false;
     onAnswer(isCorrect ? 100 : 0, isCorrect ? 5 : 1);
   };
 
@@ -262,7 +277,7 @@ export function HoerenMCRenderer({
       )}
       <p className="text-sm font-medium text-gray-900">{exercise.question}</p>
       <div className="space-y-2">
-        {exercise.options.map((opt, i) => {
+        {options.map((opt, i) => {
           const isSelected  = selected === opt.id;
           const showResult  = answered && isSelected;
           return (
@@ -328,23 +343,24 @@ export function HoerenRFRenderer({
   answered: boolean;
 }) {
   const [userAnswers, setUserAnswers] = useState<Record<string, "RICHTIG" | "FALSCH">>({});
+  const statements = Array.isArray(exercise.statements) ? exercise.statements : [];
 
   const handleSelect = useCallback((id: string, answer: "RICHTIG" | "FALSCH") => {
     if (answered) return;
     const next = { ...userAnswers, [id]: answer };
     setUserAnswers(next);
-    if (Object.keys(next).length === exercise.statements.length) {
-      const correct = exercise.statements.filter((s) => next[s.id] === s.answer).length;
-      const score   = Math.round((correct / exercise.statements.length) * 100);
+    if (Object.keys(next).length === statements.length) {
+      const correct = statements.filter((s) => next[s.id] === s.answer).length;
+      const score   = Math.round((correct / statements.length) * 100);
       onAnswer(score, score >= 80 ? 5 : score >= 60 ? 4 : 3);
     }
-  }, [answered, userAnswers, exercise.statements, onAnswer]);
+  }, [answered, userAnswers, statements, onAnswer]);
 
   return (
     <div className="space-y-4">
       <AudioPlayer script={exercise.script} level={exercise.level} />
       <div className="space-y-2.5">
-        {exercise.statements.map((s, i) => {
+        {statements.map((s, i) => {
           const ua        = userAnswers[s.id];
           const isCorrect = answered && ua === s.answer;
           return (

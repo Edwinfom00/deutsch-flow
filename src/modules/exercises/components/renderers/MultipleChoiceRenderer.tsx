@@ -15,10 +15,12 @@ interface Props {
 export function MultipleChoiceRenderer({ exercise, onAnswer, answered }: Props) {
   const [selected, setSelected] = useState<string | null>(null);
 
+  const options = Array.isArray(exercise.options) ? exercise.options : [];
+
   const handleSelect = (id: string) => {
     if (answered) return;
     setSelected(id);
-    const isCorrect = exercise.options.find((o) => o.id === id)?.isCorrect ?? false;
+    const isCorrect = options.find((o) => o.id === id)?.isCorrect ?? false;
     onAnswer(isCorrect ? 100 : 0, isCorrect ? 5 : 1);
   };
 
@@ -33,7 +35,7 @@ export function MultipleChoiceRenderer({ exercise, onAnswer, answered }: Props) 
       <p className="text-sm font-medium text-gray-900">{exercise.question}</p>
 
       <div className="space-y-2">
-        {exercise.options.map((option, i) => {
+        {options.map((option, i) => {
           const isSelected = selected === option.id;
           const showResult = answered && isSelected;
 

@@ -16,15 +16,16 @@ interface Props {
 
 export function TrueFalseRenderer({ exercise, onAnswer, answered }: Props) {
   const [userAnswers, setUserAnswers] = useState<Record<string, Answer>>({});
-  const hasNicht = exercise.statements.some((s) => s.answer === "NICHT_IM_TEXT");
+  const statements = Array.isArray(exercise.statements) ? exercise.statements : [];
+  const hasNicht = statements.some((s) => s.answer === "NICHT_IM_TEXT");
 
   const handleSelect = (id: string, answer: Answer) => {
     if (answered) return;
     const next = { ...userAnswers, [id]: answer };
     setUserAnswers(next);
-    if (Object.keys(next).length === exercise.statements.length) {
-      const correct = exercise.statements.filter((s) => next[s.id] === s.answer).length;
-      const score = Math.round((correct / exercise.statements.length) * 100);
+    if (Object.keys(next).length === statements.length) {
+      const correct = statements.filter((s) => next[s.id] === s.answer).length;
+      const score = Math.round((correct / statements.length) * 100);
       onAnswer(score, score >= 80 ? 5 : score >= 60 ? 4 : score >= 40 ? 3 : 2);
     }
   };
@@ -45,7 +46,7 @@ export function TrueFalseRenderer({ exercise, onAnswer, answered }: Props) {
       </div>
 
       <div className="space-y-2.5">
-        {exercise.statements.map((s, i) => {
+        {statements.map((s, i) => {
           const ua = userAnswers[s.id];
           const isCorrect = answered && ua === s.answer;
 

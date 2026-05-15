@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { verbCache } from "@/lib/db/schema";
 import { aiChat } from "@/lib/ai/client";
 import { parseAIJson } from "@/lib/ai/parse";
+import { ensureArray } from "@/lib/ai/parse";
 import { eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import type { CEFRLevel } from "@/types";
@@ -108,7 +109,8 @@ Réponds UNIQUEMENT avec un tableau JSON valide :
 ]`;
 
   const raw = await aiChat("vocab_gen", [{ role: "user", content: prompt }], 4000);
-  return parseAIJson(raw);
+  const result = parseAIJson(raw);
+  return ensureArray(result);
 }
 
 export const generateVerbsFn = inngest.createFunction(

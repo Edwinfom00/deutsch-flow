@@ -2,7 +2,7 @@ import { inngest } from "../client";
 import { db } from "@/lib/db";
 import { documentImport, importedExercise } from "@/lib/db/schema";
 import { anthropic, AI_MODEL } from "@/lib/ai/client";
-import { parseAIJson } from "@/lib/ai/parse";
+import { parseAIJson, ensureArray } from "@/lib/ai/parse";
 import { normalizeType, normalizeSkill } from "@/lib/ai/normalize";
 import { eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
@@ -89,7 +89,7 @@ Réponds UNIQUEMENT avec un tableau JSON valide. Pas de texte autour.
 [{ ...exercice complet... }, ...]`
       )],
     });
-    return parseAIJson<object[]>((res.content[0] as { text: string }).text);
+    return ensureArray(parseAIJson((res.content[0] as { text: string }).text));
   });
 
   // Step 2 : insertion en DB des exercices extraits
@@ -113,7 +113,7 @@ Respecte EXACTEMENT la même structure JSON que les exercices du document.
 Réponds avec un tableau JSON de 5 exercices.`
         )],
       });
-      const extra = parseAIJson<object[]>((res.content[0] as { text: string }).text);
+      const extra = ensureArray(parseAIJson((res.content[0] as { text: string }).text));
       const ids: string[] = [];
       for (const [i, content] of extra.entries()) {
         ids.push(await insertExercise(content, level, sector, importId, userId, 15, true, extracted.length + i));
@@ -165,7 +165,7 @@ Réponds UNIQUEMENT avec un tableau JSON valide. Pas de texte autour.
 [{ ...exercice complet... }, ...]`
       )],
     });
-    return parseAIJson<object[]>((res.content[0] as { text: string }).text);
+    return ensureArray(parseAIJson((res.content[0] as { text: string }).text));
   });
 
   // Step 2 : insertion en DB
@@ -190,7 +190,7 @@ Inclure LESEN (3 exercices), SCHREIBEN, HOEREN et SPRECHEN.
 Réponds avec un tableau JSON de 6 exercices (1 par compétence/partie).`
         )],
       });
-      const extra = parseAIJson<object[]>((res.content[0] as { text: string }).text);
+      const extra = ensureArray(parseAIJson((res.content[0] as { text: string }).text));
       const ids: string[] = [];
       for (const [i, content] of extra.entries()) {
         // orderIndex ≥ 100 = satz généré n°1
@@ -233,7 +233,7 @@ Réponds en JSON avec UNIQUEMENT ce tableau:
 Réponds UNIQUEMENT avec le tableau JSON valide. Pas de texte autour.`
       )],
     });
-    return parseAIJson<object[]>((res.content[0] as { text: string }).text);
+    return ensureArray(parseAIJson((res.content[0] as { text: string }).text));
   });
 
   // Step 2 : génération des exercices Claude (appel séparé)
@@ -253,7 +253,7 @@ Réponds avec un tableau JSON de 10 exercices. Chaque exercice a:
 Réponds UNIQUEMENT avec le tableau JSON valide.`
         )],
       });
-      return parseAIJson<object[]>((res.content[0] as { text: string }).text);
+      return ensureArray(parseAIJson((res.content[0] as { text: string }).text));
     } catch (err) {
       console.error("[process-document] Génération exercices grammaire échouée:", err);
       return [];

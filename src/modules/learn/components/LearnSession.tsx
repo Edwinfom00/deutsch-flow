@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useTransition } from "react";
+import { useCallback, useTransition, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { X, Zap, ChevronRight } from "lucide-react";
@@ -22,24 +22,30 @@ export function LearnSession() {
   const current = exercises[currentIndex];
   const progress = exercises.length > 0 ? (currentIndex / exercises.length) : 0;
   const timeLimit = current ? (current.content as { timeLimit?: number }).timeLimit ?? null : null;
+  const completingRef = useRef(false);
+
+  // Reset le guard à chaque nouvel exercice
+  useEffect(() => {
+    completingRef.current = false;
+  }, [currentIndex]);
 
   const handleTimerExpire = useCallback(() => {
-    if (!current) return;
+    if (!current || completingRef.current) return;
+    completingRef.current = true;
     submitResult(current.id, { score: 0, quality: 1, timeSpentSeconds: timeLimit ?? 0 });
     saveSessionProgress({ currentIndex: currentIndex + 1, result: { score: 0, quality: 1, timeSpentSeconds: timeLimit ?? 0, exerciseId: current.id } }).catch(() => {});
-    setTimeout(() => next(), 500);
+    setTimeout(() => { completingRef.current = false; next(); }, 500);
   }, [current, submitResult, next, currentIndex, timeLimit]);
 
   const handleComplete = useCallback((result: ExerciseResult) => {
-    // Guard — current peut être undefined si currentIndex est désynchronisé
-    if (!current) return;
+    if (!current || completingRef.current) return;
+    completingRef.current = true;
     submitResult(current.id, result);
-    // Sauvegarder la progression en DB
     saveSessionProgress({
       currentIndex: currentIndex + 1,
       result: { ...result, exerciseId: current.id },
-    }).catch(() => {}); // silencieux, le localStorage prend le relais
-    setTimeout(() => next(), 1200);
+    }).catch(() => {});
+    setTimeout(() => { completingRef.current = false; next(); }, 1200);
   }, [current, submitResult, next, currentIndex]);
 
   const handleFinish = () => {

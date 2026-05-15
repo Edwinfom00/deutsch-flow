@@ -15,7 +15,8 @@
     "vocab:backfill": "dotenv -e .env.local -- tsx scripts/backfill-vocab-cache.ts",
     "vocab:clear": "dotenv -e .env.local -- tsx scripts/clear-vocabulary.ts",
     "streak:fix": "dotenv -e .env.local -- tsx scripts/fix-streaks.ts",
-    "streak:debug": "dotenv -e .env.local -- tsx scripts/debug-streak.ts"
+    "streak:debug": "dotenv -e .env.local -- tsx scripts/debug-streak.ts",
+    "debug:hoeren": "dotenv -e .env.local -- tsx scripts/debug-hoeren.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.88.0",

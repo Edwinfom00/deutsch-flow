@@ -66,6 +66,7 @@ const OSD_TYPES_WITH_BUILTIN_INSTRUCTIONS = new Set([
 export function ExerciseRenderer({ exercise, onComplete, onSkip, hideHeader }: ExerciseRendererProps) {
   const [startTime] = useState(Date.now());
   const [result, setResult] = useState<ExerciseResult | null>(null);
+  const [completed, setCompleted] = useState(false);
 
   const rawType = ((exercise as unknown as Record<string, unknown>).type as string ?? "").toUpperCase();
 
@@ -91,7 +92,10 @@ export function ExerciseRenderer({ exercise, onComplete, onSkip, hideHeader }: E
   };
 
   const handleNext = () => {
-    if (result) onComplete(result);
+    if (result && !completed) {
+      setCompleted(true);
+      onComplete(result);
+    }
   };
 
   const instructions = exercise.instructions
